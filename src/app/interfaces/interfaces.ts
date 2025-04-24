@@ -8,7 +8,11 @@ export interface TreeNode {
   locked?: boolean;         // 是否鎖定
   selected?: boolean;       // 是否被選中
   reports?: string[];       // 報告內容
-  relatedTo?: string[];
+  relatedTo?: string[];    // 相關節點
+  position?: string;        // 職位
+  percentage1?: number;     // 百分比1
+  percentage2?: number;     // 百分比2
+  note?: string;           // 備註內容
 }
 
 // 樹狀操作類型

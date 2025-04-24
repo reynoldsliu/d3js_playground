@@ -17,10 +17,54 @@ export class TreeVisualizationService {
 
   private zoom: any;
 
-  public svgWidth = 928;
-  public svgHeight = 500;
-  public nodeWidth = 75;
-  public nodeHeight = 40;
+  public svgWidth = 1200;
+  public svgHeight = 800;
+  public nodeWidth = 200;
+  public nodeHeight = 60;
+
+  // 添加样式配置
+  private styles = {
+    node: {
+      default: {
+        fill: '#e8f5e9',
+        stroke: '#81c784',
+        strokeWidth: '1px'
+      },
+      selected: {
+        fill: '#d4e6f7',
+        stroke: '#3498db',
+        strokeWidth: '2px'
+      },
+      similar: {
+        stroke: '#f39c12',
+        strokeWidth: '2px',
+        strokeDash: '5,3'
+      }
+    },
+    link: {
+      stroke: '#ccc',
+      strokeWidth: '1px',
+      opacity: 1
+    },
+    text: {
+      title: {
+        size: '14px',
+        color: '#333'
+      },
+      info: {
+        size: '12px',
+        color: '#666'
+      }
+    },
+    tooltip: {
+      icon: {
+        size: '16px',
+        color: '#666'
+      },
+      background: '#fff',
+      border: '#ccc'
+    }
+  };
 
   constructor(private treeDataService: TreeDataService,) {
   }
@@ -28,117 +72,86 @@ export class TreeVisualizationService {
   public loadTreeData(): TreeNode {
     return {
       id: '1',
-      name: 'Eve',
+      name: '三雅投資股份有限公司',
+      position: '',
       level: 0,
       locked: false,
       selected: false,
-      reports: ['創世紀報告', '人類起源研究'],
+      percentage1: 1.24,
+      percentage2: 13.74,
+      note: '主要投資公司',
       children: [
         {
           id: '2',
-          name: 'Cain',
-          parentId: '1',
-          level: 1,
-          locked: true,
-          selected: false,
-          reports: ['農業發展計畫']
-        },
-        {
-          id: '3',
-          name: 'Seth',
+          name: '王光祥',
+          position: '董事長',
           parentId: '1',
           level: 1,
           locked: false,
           selected: false,
-          reports: ['後代傳承方案', '家族發展報告'],
+          percentage1: 1.36,
+          percentage2: 15.06,
+          note: '公司主要決策者',
+          children: []
+        },
+        {
+          id: '3',
+          name: '陳麒盛',
+          position: '監察人',
+          parentId: '1',
+          level: 1,
+          locked: false,
+          selected: false,
+          percentage1: 0.19,
+          percentage2: 2.08,
+          note: '負責公司監督',
           children: [
             {
-              id: '8',
-              name: 'Enos',
+              id: '5',
+              name: '山圓建設股份有限公司',
+              position: '',
               parentId: '3',
               level: 2,
               locked: false,
               selected: false,
-              reports: ['宗教研究初探']
-            },
-            {
-              id: '9',
-              name: 'Noam',
-              parentId: '3',
-              level: 2,
-              locked: false,
-              selected: false,
-              reports: []
+              percentage1: 9.04,
+              percentage2: 9.04,
+              note: '建設公司子公司',
+              children: []
             }
           ]
         },
         {
           id: '4',
-          name: 'Abel',
+          name: '王雅麟',
+          position: '董事',
           parentId: '1',
           level: 1,
           locked: false,
           selected: false,
-          reports: ['牧羊技術報告']
-        },
-        {
-          id: '5',
-          name: 'Awan',
-          parentId: '1',
-          level: 1,
-          locked: false,
-          selected: false,
-          reports: ['工藝發展史'],
-          children: [
-            {
-              id: '10',
-              name: 'Enoch',
-              parentId: '5',
-              level: 2,
-              locked: false,
-              selected: false,
-              reports: ['城市規劃初步', '建築學基礎']
-            }
-          ]
-        },
-        {
-          id: '6',
-          name: 'Azura',
-          parentId: '1',
-          level: 1,
-          locked: false,
-          selected: false,
-          reports: []
-        },
-        {
-          id: '7',
-          name: 'Awan',  // 故意重複的公司名稱，用於測試「選取同公司提示」功能
-          parentId: '1',
-          level: 1,
-          locked: false,
-          selected: false,
-          reports: ['另一部門的工藝報告']
+          percentage1: 0.12,
+          percentage2: 1.34,
+          note: '負責公司營運',
+          children: []
         }
       ]
     } as TreeNode;
-  } // TODO
+  }
 
   public performAction(): void {
   } // TODO
 
   public initializeTree(data: TreeNode | undefined) {
     if (data) {
-      // 首先將數據設置到 TreeDataService 中
       this.treeDataService.loadInitialData(data);
     }
-    // Create hierarchy and apply tree layout
+    
     const root = d3.hierarchy(data) as HierarchyNode<unknown>;
-
-    // Using nodeSize sets the spacing between nodes
-    const tree = d3.tree().nodeSize([this.nodeWidth * 1.5, this.nodeHeight * 2]);
-
-    // Apply layout to calculate positions
+    const tree = d3.tree().nodeSize([this.nodeWidth * 1.5, this.nodeHeight * 3]);
     tree(root);
+
+    // 初始化tooltip
+    const tooltip = this.initializeTooltip();
 
     // Create SVG
     this.svg = d3.select('.tree-visualization')
@@ -146,26 +159,36 @@ export class TreeVisualizationService {
       .attr('width', this.svgWidth)
       .attr('height', this.svgHeight)
       .attr('viewBox', [0, 0, this.svgWidth, this.svgHeight])
-      .attr('style', 'max-width: 100%; height: auto; font: 10px sans-serif;');
+      .attr('style', 'max-width: 100%; height: auto;');
 
-    // Create a group to hold all elements with a margin
+    // Create a group with margin
     this.g = this.svg.append('g')
-      .attr('transform', `translate(${this.svgWidth / 2}, ${this.nodeHeight})`);
+      .attr('transform', `translate(${this.svgWidth / 2}, ${this.nodeHeight * 2})`);
 
-    // Create links first (so they appear behind nodes)
+    // Create links
     this.links = this.g.selectAll('.link')
       .data(root.links())
       .enter()
       .append('path')
       .attr('class', 'link')
-      .attr('d', d3.linkVertical()
-        .x((d: any) => d.x)  // Use natural x,y for vertical layout
-        .y((d: any) => d.y) as any)
+      .attr('d', (d: any) => {
+        const sourceX = d.source.x;
+        const sourceY = d.source.y;
+        const targetX = d.target.x;
+        const targetY = d.target.y;
+        const midY = (sourceY + targetY) / 2;
+        
+        return `M${sourceX},${sourceY}
+                L${sourceX},${midY}
+                L${targetX},${midY}
+                L${targetX},${targetY}`;
+      })
       .style('fill', 'none')
-      .style('stroke', '#000000')
-      .style('stroke-width', '1.5px');
+      .style('stroke', this.styles.link.stroke)
+      .style('stroke-width', this.styles.link.strokeWidth)
+      .style('opacity', this.styles.link.opacity);
 
-    // Create node groups
+    // Create nodes
     this.nodes = this.g.selectAll('.node')
       .data(root.descendants())
       .enter()
@@ -180,38 +203,141 @@ export class TreeVisualizationService {
       })
       .attr('transform', (d: { x: any; y: any; }) => `translate(${d.x},${d.y})`)
       .on('click', (event: any, d: d3.HierarchyNode<unknown>) => this.handleNodeClick(event, d));
-    // Add rectangles to nodes - centered on node position
+
+    // Add rectangles
     this.nodes.append('rect')
       .attr('width', this.nodeWidth)
       .attr('height', this.nodeHeight)
-      .attr('x', -this.nodeWidth / 2)  // Center the rectangle on the node
-      .attr('y', -this.nodeHeight / 2) // Center the rectangle on the node
-      .style('fill', '#69b3a2')
-      .style('stroke', '#000')
-      .attr('rx', 5) // Rounded corners
-      .attr('ry', 5);
+      .attr('x', -this.nodeWidth / 2)
+      .attr('y', -this.nodeHeight / 2)
+      .attr('rx', 5)
+      .attr('ry', 5)
+      .style('fill', (d: any) => {
+        const nodeData = d.data as TreeNode;
+        return nodeData.selected ? this.styles.node.selected.fill : this.styles.node.default.fill;
+      })
+      .style('stroke', this.styles.node.default.stroke)
+      .style('stroke-width', this.styles.node.default.strokeWidth);
 
-    // Add text labels
+    // Add name text
     this.nodes.append('text')
-      .attr('dy', '0.3em')
+      .attr('dy', '-0.5em')
       .attr('text-anchor', 'middle')
+      .attr('class', 'node-name')
       .text((d: { data: TreeNode; }) => (d.data as TreeNode).name)
-      .style('fill', 'white')
-      .style('font-size', '12px');
+      .style('fill', this.styles.text.title.color)
+      .style('font-size', this.styles.text.title.size)
+      .style('font-weight', 'bold');
+
+    // Add position text
+    this.nodes.append('text')
+      .attr('dy', '1em')
+      .attr('text-anchor', 'middle')
+      .attr('class', 'node-position')
+      .text((d: { data: TreeNode; }) => (d.data as TreeNode).position || '')
+      .style('fill', this.styles.text.info.color)
+      .style('font-size', this.styles.text.info.size);
+
+    // Add percentages text
+    this.nodes.append('text')
+      .attr('dy', '2.2em')
+      .attr('text-anchor', 'middle')
+      .attr('class', 'node-percentages')
+      .text((d: { data: TreeNode; }) => {
+        const node = d.data as TreeNode;
+        if (node.percentage1 !== undefined && node.percentage2 !== undefined) {
+          return `${node.percentage1}% / ${node.percentage2}%`;
+        }
+        return '';
+      })
+      .style('fill', this.styles.text.info.color)
+      .style('font-size', this.styles.text.info.size);
+
+    // 在节点组中添加提示图标
+    const noteIcons = this.nodes.append('g')
+      .attr('class', 'note-icon')
+      .style('cursor', 'pointer')
+      .style('visibility', (d: { data: TreeNode; }) => {
+        const nodeData = d.data as TreeNode;
+        return nodeData.note ? 'visible' : 'hidden';
+      });
+
+    // 添加图标背景圆圈
+    noteIcons.append('circle')
+      .attr('cx', this.nodeWidth / 2 - 12)
+      .attr('cy', -this.nodeHeight / 2 + 12)
+      .attr('r', 8)
+      .style('fill', '#fff')
+      .style('stroke', this.styles.tooltip.icon.color)
+      .style('stroke-width', '1px');
+
+    // 添加 "i" 文本作为图标
+    noteIcons.append('text')
+      .attr('x', this.nodeWidth / 2 - 12)
+      .attr('y', -this.nodeHeight / 2 + 12)
+      .attr('dy', '0.3em')
+      .style('text-anchor', 'middle')
+      .style('fill', this.styles.tooltip.icon.color)
+      .style('font-size', '12px')
+      .style('font-weight', 'bold')
+      .style('font-family', 'serif')
+      .text('i');
+
+    // 修改鼠标事件处理
+    let activeTooltip = false;
+    
+    noteIcons
+      .on('mouseover', (event: any, d: any) => {
+        const nodeData = d.data as TreeNode;
+        if (nodeData.note) {
+          activeTooltip = true;
+          tooltip
+            .style('visibility', 'visible')
+            .text(nodeData.note);
+          
+          const iconBox = (event.target as SVGElement).getBoundingClientRect();
+          tooltip
+            .style('left', `${iconBox.right + 10}px`)
+            .style('top', `${iconBox.top}px`);
+        }
+      })
+      .on('mouseout', (event: any) => {
+        // 检查鼠标是否真的离开了图标区域
+        const relatedTarget = event.relatedTarget;
+        if (!relatedTarget || !event.target.contains(relatedTarget)) {
+          activeTooltip = false;
+          // 使用短暂延迟来处理鼠标快速移动的情况
+          setTimeout(() => {
+            if (!activeTooltip) {
+              tooltip.style('visibility', 'hidden');
+            }
+          }, 100);
+        }
+      })
+      .on('click', (event: any) => {
+        // 阻止事件冒泡
+        event.stopPropagation();
+        // 点击时直接隐藏 tooltip
+        tooltip.style('visibility', 'hidden');
+        activeTooltip = false;
+      });
+
+    // 添加对整个文档的点击事件监听
+    d3.select('body').on('click', () => {
+      if (tooltip) {
+        tooltip.style('visibility', 'hidden');
+        activeTooltip = false;
+      }
+    });
 
     return this.svg.node();
   }
 
   setupZoom(): void {
-    console.log('setupZoom');
-    // 1. 創建縮放行為
     this.zoom = d3.zoom()
-      .scaleExtent([0.3, 5]) // 設置縮放範圍 (最小縮放比例, 最大縮放比例)
+      .scaleExtent([0.3, 2]) // 调整缩放范围
       .on('zoom', (event) => {
-        // 2. 縮放事件處理
-        // 在這裡更新元素的變換
         this.g.attr('transform', event.transform);
-        // 更新 TreeState 中的縮放和平移狀態
         this.treeDataService.updateTreeState({
           zoom: event.transform.k,
           pan: {
@@ -221,24 +347,42 @@ export class TreeVisualizationService {
         });
       });
 
-    // 設置初始變換，使其與初始佈局相匹配
-    const initialTransform = d3.zoomIdentity
-      .translate(this.svgWidth / 2, this.nodeHeight)
-      .scale(1);
+    // 将缩放行为应用到SVG
+    this.svg.call(this.zoom);
 
-    // 3. 將縮放行為應用到 SVG 元素
-    this.svg.call(this.zoom)
-      .call(this.zoom.transform, initialTransform);
+    // 初始化时自动居中
+    this.centerGraph();
   }
 
   resetZoom(): void {
-    const initialTransform = d3.zoomIdentity
-      .translate(this.svgWidth / 2, this.nodeHeight)
-      .scale(1);
+    if (!this.svg || !this.g) return;
+
+    // 获取所有节点的边界
+    const bounds = this.g.node().getBBox();
+    
+    // 考虑节点的实际大小和边距
+    const padding = 50;
+    const effectiveWidth = bounds.width + this.nodeWidth + padding * 2;
+    const effectiveHeight = bounds.height + this.nodeHeight + padding * 2;
+
+    // 计算适当的缩放比例
+    const scale = Math.min(
+      (this.svgWidth - padding * 2) / effectiveWidth,
+      (this.svgHeight - padding * 2) / effectiveHeight,
+      1.5
+    );
+
+    // 计算居中位置，考虑节点的实际大小
+    const translateX = (this.svgWidth - effectiveWidth * scale) / 2 - (bounds.x - padding) * scale;
+    const translateY = (this.svgHeight - effectiveHeight * scale) / 2 - (bounds.y - padding) * scale;
+
+    const transform = d3.zoomIdentity
+      .translate(translateX, translateY)
+      .scale(scale);
 
     this.svg.transition()
       .duration(750)
-      .call(this.zoom.transform, initialTransform);
+      .call(this.zoom.transform, transform);
   }
 
   zoomIn(): void {
@@ -255,36 +399,20 @@ export class TreeVisualizationService {
 
   // TODO 處理節點點擊事件
   private handleNodeClick(event: any, d: d3.HierarchyNode<unknown>) {
-    // this.selectedNodeSubject.next(node.data);
-    // TODO 更新樹狀圖中的選中狀態...
     event.stopPropagation();
     const nodeData = d.data as TreeNode;
     const nodeId = nodeData.id;
-    console.log(nodeId);
+    
     if (nodeId) {
-      // 調用服務選擇節點
+      // 获取当前的变换状态
+      const currentTransform = d3.zoomTransform(this.svg.node());
+      
+      // 更新节点选择状态
       this.treeDataService.selectNode(nodeId);
+      this.updateNodeStyles(nodeId, nodeData.name);
 
-      // 更新視覺顯示
-      // 1. 移除所有節點的選中類
-      // 重置所有節點樣式
-      this.nodes.select('rect')
-        .style('fill', '#69b3a2')
-        .style('stroke', '#000')
-        .style('stroke-width', '1px');
-
-      // 設置選中節點樣式
-      d3.select(`#node-${nodeId}`).select('rect')
-        .style('fill', '#d4e6f7')
-        .style('stroke', '#3498db')
-        .style('stroke-width', '3px');
-      // 突出顯示同名節點
-      const nodeName = nodeData.name;
-      if (nodeName) {
-        const similarNodes = this.treeDataService.findNodesByName(nodeName);
-        this.highlightSimilarNodes(similarNodes, nodeId);
-      }
-
+      // 恢复之前的变换状态，防止画面移动
+      this.svg.call(this.zoom.transform, currentTransform);
     }
   }
 
@@ -299,36 +427,39 @@ export class TreeVisualizationService {
     // TODO 發出事件通知應用程式顯示報告列表...
   }
 
-  // 突出顯示相同名稱的節點
-  highlightSimilarNodes(similarNodes: TreeNode[], currentNodeId: string): void {
-    // 1. 首先移除所有之前的高亮並重置樣式
+  // 新增方法：统一更新节点样式
+  private updateNodeStyles(selectedNodeId: string, nodeName: string) {
+    // 重置所有节点样式到默认状态
     this.nodes.select('rect')
-      .style('stroke', (d: { data: TreeNode; }) => {
-        const nodeData = d.data as TreeNode;
-        return nodeData.selected ? '#3498db' : '#000'; // 選中節點藍色，其他為黑色
-      })
-      .style('stroke-width', (d: { data: TreeNode; }) => {
-        const nodeData = d.data as TreeNode;
-        return nodeData.selected ? '3px' : '1px';
-      })
-      .style('stroke-dasharray', null); // 移除虛線效果
-    // 2. 如果沒有相似節點，直接返回
+      .style('fill', this.styles.node.default.fill)
+      .style('stroke', this.styles.node.default.stroke)
+      .style('stroke-width', this.styles.node.default.strokeWidth)
+      .style('stroke-dasharray', null);
+
+    // 设置选中节点样式
+    d3.select(`#node-${selectedNodeId}`).select('rect')
+      .style('fill', this.styles.node.selected.fill)
+      .style('stroke', this.styles.node.selected.stroke)
+      .style('stroke-width', this.styles.node.selected.strokeWidth);
+
+    // 高亮相似节点
+    const similarNodes = this.treeDataService.findNodesByName(nodeName);
+    this.highlightSimilarNodes(similarNodes, selectedNodeId);
+  }
+
+  // 修改 highlightSimilarNodes 方法
+  highlightSimilarNodes(similarNodes: TreeNode[], currentNodeId: string): void {
     if (!similarNodes || similarNodes.length === 0) {
       return;
     }
 
-    // 3. 過濾掉當前選中的節點
     const nodesToHighlight = similarNodes.filter(node => node.id !== currentNodeId);
-
-    console.log('要高亮的節點數:', nodesToHighlight.length);
-
-    // 4. 為每個相似節點添加高亮
     nodesToHighlight.forEach(node => {
       if (node.id) {
         d3.select(`#node-${node.id}`).select('rect')
-          .style('stroke', '#f39c12')  // 橙色邊框
-          .style('stroke-width', '2px')
-          .style('stroke-dasharray', '5, 3');  // 虛線效果
+          .style('stroke', this.styles.node.similar.stroke)
+          .style('stroke-width', this.styles.node.similar.strokeWidth)
+          .style('stroke-dasharray', this.styles.node.similar.strokeDash);
       }
     });
   }
@@ -352,28 +483,32 @@ export class TreeVisualizationService {
   }
 
   updateView(data: TreeNode): void {
-    // 清除當前視圖
+    // 保存当前的变换状态
+    const currentTransform = this.svg && this.svg.node() ? 
+      d3.zoomTransform(this.svg.node()) : 
+      d3.zoomIdentity.translate(this.svgWidth / 2, this.nodeHeight * 2).scale(1);
+
+    // 清除当前视图
     if (this.svg) {
       this.svg.selectAll("*").remove();
     }
 
-    // 使用新數據重新初始化樹
+    // 使用新数据重新初始化树
     this.initializeTree(data);
 
-    // 重新設置縮放行為
+    // 重新设置缩放行为
     this.setupZoom();
 
-    // 如果有選中的節點，恢復其選中狀態
+    // 恢复之前的变换状态
+    this.svg.call(this.zoom.transform, currentTransform);
+
+    // 如果有选中的节点，恢复其选中状态
     const selectedNodeId = this.treeDataService.getSelectedNodeId();
     if (selectedNodeId) {
-      this.highlightNode(selectedNodeId, 'selected');
-    }
-
-    // 如果有需要高亮的相似節點，恢復高亮
-    const selectedNode = this.treeDataService.getSelectedNode();
-    if (selectedNode) {
-      const similarNodes = this.treeDataService.findNodesByName(selectedNode.name);
-      this.highlightSimilarNodes(similarNodes, selectedNode.id);
+      const selectedNode = this.treeDataService.getSelectedNode();
+      if (selectedNode) {
+        this.updateNodeStyles(selectedNodeId, selectedNode.name);
+      }
     }
   }
 
@@ -388,5 +523,220 @@ export class TreeVisualizationService {
       .style('stroke-width', '3px');
   }
 
+  public updateTree(data: TreeNode): void {
+    const root = d3.hierarchy(data) as d3.HierarchyNode<TreeNode>;
+    const tree = d3.tree<TreeNode>().nodeSize([this.nodeWidth * 1.5, this.nodeHeight * 3]);
+    tree(root);
+
+    // 计算树的边界，包含节点的实际大小
+    let minX = Infinity;
+    let maxX = -Infinity;
+    let minY = Infinity;
+    let maxY = -Infinity;
+
+    root.each((d: any) => {
+      // 考虑节点的实际大小
+      minX = Math.min(minX, d.x - this.nodeWidth / 2);
+      maxX = Math.max(maxX, d.x + this.nodeWidth / 2);
+      minY = Math.min(minY, d.y - this.nodeHeight / 2);
+      maxY = Math.max(maxY, d.y + this.nodeHeight / 2);
+    });
+
+    // 添加边距以确保节点不会贴边
+    const padding = 50;
+    const treeWidth = maxX - minX + padding * 2;
+    const treeHeight = maxY - minY + padding * 2;
+
+    // 计算适当的缩放比例，确保所有节点可见
+    const scale = Math.min(
+      (this.svgWidth - padding * 2) / treeWidth,
+      (this.svgHeight - padding * 2) / treeHeight,
+      1.5 // 限制最大缩放比例为1.5
+    );
+
+    // 计算居中位置
+    const translateX = (this.svgWidth - treeWidth * scale) / 2 - minX * scale;
+    const translateY = (this.svgHeight - treeHeight * scale) / 2 - minY * scale;
+
+    // 创建新的变换
+    const newTransform = d3.zoomIdentity
+      .translate(translateX, translateY)
+      .scale(scale);
+
+    // Update links
+    const linkUpdate = this.g.selectAll('.link')
+      .data(root.links(), (d: d3.HierarchyLink<TreeNode>) => (d.target as d3.HierarchyNode<TreeNode>).data.id);
+
+    const linkEnter = linkUpdate.enter()
+      .append('path')
+      .attr('class', 'link')
+      .style('fill', 'none')
+      .style('stroke', this.styles.link.stroke)
+      .style('stroke-width', this.styles.link.strokeWidth)
+      .style('opacity', 0);
+
+    // 更新连接线，使用平滑过渡
+    linkUpdate.merge(linkEnter)
+      .transition()
+      .duration(750)
+      .attr('d', (d: any) => {
+        const sourceX = d.source.x;
+        const sourceY = d.source.y;
+        const targetX = d.target.x;
+        const targetY = d.target.y;
+        const midY = (sourceY + targetY) / 2;
+        
+        return `M${sourceX},${sourceY}
+                L${sourceX},${midY}
+                L${targetX},${midY}
+                L${targetX},${targetY}`;
+      })
+      .style('opacity', 1);
+
+    linkUpdate.exit()
+      .transition()
+      .duration(750)
+      .style('opacity', 0)
+      .remove();
+
+    // Update nodes
+    const nodeUpdate = this.g.selectAll('.node')
+      .data(root.descendants(), (d: any) => d.data.id);
+
+    const nodeEnter = nodeUpdate.enter()
+      .append('g')
+      .attr('class', 'node')
+      .attr('transform', (d: any) => `translate(${d.x},${d.y})`);
+
+    // Add new node elements
+    this.addNodeElements(nodeEnter);
+
+    // Update existing nodes with transition
+    nodeUpdate.merge(nodeEnter)
+      .transition()
+      .duration(750)
+      .attr('transform', (d: any) => `translate(${d.x},${d.y})`);
+
+    // Remove old nodes
+    nodeUpdate.exit()
+      .transition()
+      .duration(750)
+      .style('opacity', 0)
+      .remove();
+
+    // 更新提示图标
+    this.nodes = this.g.selectAll('.node');
+    const noteIcons = this.nodes.select('.note-icon')
+      .style('visibility', (d: { data: TreeNode; }) => {
+        const nodeData = d.data as TreeNode;
+        return nodeData.note ? 'visible' : 'hidden';
+      });
+
+    // 应用新的变换，使用过渡动画
+    this.svg.transition()
+      .duration(750)
+      .call(this.zoom.transform, newTransform);
+  }
+
+  private addNodeElements(selection: any) {
+    // Add rectangle
+    selection.append('rect')
+      .attr('width', this.nodeWidth)
+      .attr('height', this.nodeHeight)
+      .attr('x', -this.nodeWidth / 2)
+      .attr('y', -this.nodeHeight / 2)
+      .style('fill', '#e8f5e9')
+      .style('stroke', '#81c784')
+      .attr('rx', 5)
+      .attr('ry', 5);
+
+    // Add name text
+    selection.append('text')
+      .attr('dy', '-0.5em')
+      .attr('text-anchor', 'middle')
+      .text((d: { data: TreeNode; }) => (d.data as TreeNode).name)
+      .style('fill', '#2e7d32')
+      .style('font-size', '12px')
+      .style('font-weight', 'bold');
+
+    // Add reports count
+    selection.append('text')
+      .attr('dy', '1em')
+      .attr('text-anchor', 'middle')
+      .text((d: { data: TreeNode; }) => {
+        const nodeData = d.data as TreeNode;
+        return `報告: ${nodeData.reports ? nodeData.reports.length : 0}`;
+      })
+      .style('fill', '#616161')
+      .style('font-size', '10px');
+
+    // Add lock status
+    selection.append('text')
+      .attr('dy', '2em')
+      .attr('text-anchor', 'middle')
+      .text((d: { data: TreeNode; }) => {
+        const nodeData = d.data as TreeNode;
+        return nodeData.locked ? '🔒' : '';
+      })
+      .style('font-size', '10px');
+  }
+
+  // 添加自动居中方法
+  public centerGraph(): void {
+    if (!this.svg || !this.g) return;
+
+    // 获取所有节点的边界
+    const bounds = this.g.node().getBBox();
+    
+    // 考虑节点的实际大小和边距
+    const padding = 50;
+    const effectiveWidth = bounds.width + this.nodeWidth + padding * 2;
+    const effectiveHeight = bounds.height + this.nodeHeight + padding * 2;
+
+    // 计算适当的缩放比例
+    const scale = Math.min(
+      (this.svgWidth - padding * 2) / effectiveWidth,
+      (this.svgHeight - padding * 2) / effectiveHeight,
+      1.5
+    );
+
+    // 计算居中位置，考虑节点的实际大小
+    const translateX = (this.svgWidth - effectiveWidth * scale) / 2 - (bounds.x - padding) * scale;
+    const translateY = (this.svgHeight - effectiveHeight * scale) / 2 - (bounds.y - padding) * scale;
+
+    const transform = d3.zoomIdentity
+      .translate(translateX, translateY)
+      .scale(scale);
+
+    this.svg.transition()
+      .duration(750)
+      .call(this.zoom.transform, transform);
+  }
+
+  private initializeTooltip() {
+    // 移除可能存在的旧 tooltip
+    d3.select('body').selectAll('.node-tooltip').remove();
+    
+    // 创建新的 tooltip
+    const tooltip = d3.select('body').append('div')
+      .attr('class', 'node-tooltip')
+      .style('position', 'absolute')
+      .style('visibility', 'hidden')
+      .style('background-color', this.styles.tooltip.background)
+      .style('border', `1px solid ${this.styles.tooltip.border}`)
+      .style('padding', '8px')
+      .style('border-radius', '4px')
+      .style('font-size', '12px')
+      .style('box-shadow', '0 2px 4px rgba(0,0,0,0.1)')
+      .style('pointer-events', 'none'); // 防止 tooltip 本身捕获鼠标事件
+
+    return tooltip;
+  }
+
+  // 在组件销毁时清理 tooltip
+  public cleanup(): void {
+    d3.select('body').selectAll('.node-tooltip').remove();
+    d3.select('body').on('click', null); // 移除点击事件监听
+  }
 
 }
