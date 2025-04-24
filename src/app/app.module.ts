@@ -6,6 +6,7 @@ import { AppComponent } from './app.component';
 import { TreeVisualizationComponent } from './components/tree-visualization/tree-visualization.component';
 import {TreeVisualizationService} from './services/tree-visualization-service';
 import {CompanyBlockComponent} from './components/company-block/company-block.component';
+import {TreeDataService} from './services/tree-data-service';
 
 @NgModule({
   declarations: [
@@ -17,7 +18,8 @@ import {CompanyBlockComponent} from './components/company-block/company-block.co
     BrowserModule,
     AppRoutingModule
   ],
-  providers: [TreeVisualizationService],
+  providers: [TreeVisualizationService,
+  TreeDataService],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

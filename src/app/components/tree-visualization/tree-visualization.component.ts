@@ -3,6 +3,8 @@ import {Subscription} from 'rxjs';
 import * as d3 from 'd3';
 import {TreeNode} from '../../interfaces/interfaces';
 import {TreeVisualizationService} from '../../services/tree-visualization-service';
+import {range} from 'd3';
+import {TreeDataService} from '../../services/tree-data-service';
 
 @Component({
   selector: 'app-tree-visualization',
@@ -13,80 +15,76 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
   @ViewChild('treeContainer', {static: true}) public treeContainer!: ElementRef;
   private subscription: Subscription | undefined;
 
-  data: TreeNode = {
-    name: 'Eve',
-    children: [
-      {name: 'Cain'},
-      {name: 'Seth', children: [{name: 'Enos'}, {name: 'Noam'}]},
-      {name: 'Abel'},
-      {name: 'Awan', children: [{name: 'Enoch'}]},
-      {name: 'Azura'}
-    ]
-  };
+  selectedNode: TreeNode | null = null;
+  private zoom: any;
+  private svg: any;
+  public data: TreeNode | undefined;
 
-  constructor(private treeVisualizationService: TreeVisualizationService) {
+  constructor(private treeVisualizationService: TreeVisualizationService,
+              private treeDataService: TreeDataService,) {
   }
 
   ngOnInit(): void {
+    this.treeDataService.selectedNode$.subscribe((selectedNode: TreeNode | null) => {
+      this.selectedNode = selectedNode;
+    });
+    this.loadTreeData();
   }
 
   ngAfterViewInit(): void {
     this.refresh(this.data);
+    this.treeVisualizationService.setupZoom();
   }
 
-  refresh(data: TreeNode): void {
+  loadTreeData(): void {
+    this.data = this.treeVisualizationService.loadTreeData();
+  }
+
+  setupZoom(): void {
+    this.zoom = d3.zoom()
+      .scaleExtent([0.3, 2])
+      .on('zoom', (event) => {
+        if (this.svg) {
+          this.svg.select('g').attr('transform', event.transform);
+        }
+      });
+  }
+
+  applyZoom(): void {
+    if (this.svg) {
+      this.svg.call(this.zoom);
+    }
+  }
+
+  zoomIn() {
+    this.treeVisualizationService.zoomIn();
+  }
+
+  zoomOut() {
+    this.treeVisualizationService.zoomOut();
+  }
+
+  resetZoom() {
+    this.treeVisualizationService.resetZoom();
+  }
+
+  refresh(data: TreeNode | undefined): void {
     const initNode =
-      this.treeVisualizationService.getInitNode(data);
+      this.treeVisualizationService.initializeTree(data);
     this.treeContainer.nativeElement.appendChild(initNode);
   }
 
   createNode(): void {
-    console.log('createNode');
-    const selectedNodes = this.treeVisualizationService.getSelectedNodes();
-    console.log(selectedNodes);
-    console.log(selectedNodes.length);
-    console.log(selectedNodes[selectedNodes.length - 1]);
-    // @ts-ignore
-    console.log(selectedNodes[selectedNodes.length - 1].data.name);
-    if (selectedNodes.length > 0
-      && selectedNodes[selectedNodes.length - 1]
-      // @ts-ignore
-      && selectedNodes[selectedNodes.length - 1].data.name) {
-      console.log('selected');
-      // @ts-ignore
-      const selectedNode = this.treeVisualizationService.findNode(selectedNodes[selectedNodes.length - 1].data.name);
-      console.log(selectedNode);
-      if (selectedNode) {
-        console.log('creating');
-        console.log(selectedNode.children);
-        if (!selectedNode.children) {
-          selectedNode.children = [];
-        }
-        console.log(selectedNode);
-        selectedNode.children.push({
-          id: '',
-          name: '',
-          data: '',
-        // @ts-ignore
-          parent: selectedNode,
-        // @ts-ignore
-          level: selectedNode.depth as number + 1,
-        });
-        console.log(selectedNode.children);
-
-        console.log(this.treeVisualizationService.getRoot());
-      }
-    }
   }
 
   deleteNode(): void {
-    console.log('deleteNode');
-    const selectedNodes = this.treeVisualizationService.getSelectedNodes();
-    this.treeVisualizationService.removeSelectedNodes(selectedNodes.map(e => e.id));
   }
 
   selectedNodes(): void {
-    console.log(this.treeVisualizationService.getSelectedNodes());
+  }
+
+  editNode(): void {
+
   }
 
   resetView(): void {
@@ -94,8 +92,5 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
   }
 
   ngOnDestroy(): void {
-    if (this.subscription) {
-      this.subscription.unsubscribe();
-    }
   }
 }

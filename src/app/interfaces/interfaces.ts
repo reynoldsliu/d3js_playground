@@ -1,26 +1,32 @@
-import {CompanyBlockComponent} from '../components/company-block/company-block.component';
-
+// 基本節點介面
 export interface TreeNode {
-  id?: string;
-  name: string;
-  data?: string;
-  parentId?: string;
-  level?: number;
-  children?: TreeNode[];
-  component?: CompanyBlockComponent;
-  metaData?:{
-    [key: string]: any;
-  }
+  id: string;               // 唯一識別碼，不應該是可選的
+  name: string;             // 公司/節點名稱
+  parentId?: string;        // 父節點 ID
+  level?: number;           // 層級
+  children?: TreeNode[];    // 子節點
+  locked?: boolean;         // 是否鎖定
+  selected?: boolean;       // 是否被選中
+  reports?: string[];       // 報告內容
+  relatedTo?: string[];
 }
 
-export interface TreeConfig {
-  width: number;
-  height: number;
-  nodeWidth: number;
-  nodeHeight: number;
+// 樹狀操作類型
+export enum TreeActionType {
+  SELECT_NODE = 'select_node',
+  ADD_NODE = 'add_node',
+  EDIT_NODE = 'edit_node',
+  DELETE_NODE = 'delete_node',
+  LOCK_NODE = 'lock_node',
+  UNLOCK_NODE = 'unlock_node',
+  LINK_NODES = 'link_nodes',
+  UNLINK_NODES = 'unlink_nodes'
 }
 
+// 樹狀視圖狀態
 export interface TreeState {
-  selectedNodes: TreeNode[];
-  highlightNodes: TreeNode[];
+  selectedNodeId?: string;
+  expandedNodeIds: string[];
+  zoom: number;
+  pan: { x: number, y: number };
 }
