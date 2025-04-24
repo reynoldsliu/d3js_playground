@@ -1,12 +1,80 @@
 <div class="tree-container">
-  <div class="tree-controls">
-    <button class="reset-button" (click)="resetView()">重置視圖</button>
-    <button (click)="createNode()">新增</button>
-    <button (click)="deleteNode()">刪除</button>
-    <button (click)="selectedNodes()">已選取</button>
-    <button (click)="zoomOut()">-</button>
-    <button (click)="resetZoom()">zoom</button>
-    <button (click)="zoomIn()">+</button>
+  <div class="controls-panel">
+    <div class="zoom-controls">
+      <button (click)="zoomIn()" title="放大">
+        <i class="fa fa-search-plus"></i> 放大
+      </button>
+      <button (click)="zoomOut()" title="縮小">
+        <i class="fa fa-search-minus"></i> 縮小
+      </button>
+      <button (click)="resetZoom()" title="重置視圖">
+        <i class="fa fa-expand"></i> 重置
+      </button>
+    </div>
+
+    <div class="tree-actions">
+      <button (click)="createNode()" title="創建新節點">
+        <i class="fa fa-plus"></i> 新增節點
+      </button>
+    </div>
   </div>
-  <div #treeContainer class="tree-visualization"></div>
+
+  <div class="visualization-container">
+    <div #treeContainer class="tree-visualization"></div>
+  </div>
+
+  <div *ngIf="selectedNode" class="sidebar">
+    <div class="sidebar-header">
+      <h3>{{selectedNode.name}}</h3>
+      <span class="node-status" [class.locked]="selectedNode.locked">
+        {{selectedNode.locked ? '已鎖定' : '正常'}}
+      </span>
+    </div>
+
+    <div class="node-details">
+      <div class="detail-item">
+        <span class="label">ID:</span>
+        <span class="value">{{selectedNode.id}}</span>
+      </div>
+      <div class="detail-item">
+        <span class="label">層級:</span>
+        <span class="value">{{selectedNode.level}}</span>
+      </div>
+      <div class="detail-item">
+        <span class="label">報告數:</span>
+        <span class="value">{{selectedNode.reports?.length || 0}}</span>
+      </div>
+    </div>
+
+    <div class="node-actions">
+      <button (click)="editNode()" [disabled]="selectedNode.locked">
+        <i class="fa fa-edit"></i> 編輯
+      </button>
+      <button (click)="deleteNode()" [disabled]="selectedNode.locked">
+        <i class="fa fa-trash"></i> 刪除
+      </button>
+      <button (click)="toggleLock()">
+        <i class="fa" [class.fa-lock]="!selectedNode.locked" [class.fa-unlock]="selectedNode.locked"></i>
+        {{selectedNode.locked ? '解鎖' : '鎖定'}}
+      </button>
+      <button (click)="linkNode()">
+        <i class="fa fa-link"></i> 關聯
+      </button>
+<!--      <button (click)="highlightSimilarNodes()">-->
+<!--        <i class="fa fa-search"></i> 查找同名-->
+<!--      </button>-->
+    </div>
+
+    <div class="reports-section" *ngIf="selectedNode.reports && selectedNode.reports.length > 0">
+      <h4>報告列表</h4>
+      <ul class="reports-list">
+        <li *ngFor="let report of selectedNode.reports" class="report-item">
+          <span class="report-title">{{report}}</span>
+        </li>
+      </ul>
+      <button (click)="showReports()" class="view-all-reports">
+        <i class="fa fa-file-text"></i> 查看所有報告
+      </button>
+    </div>
+  </div>
 </div>

@@ -127,7 +127,10 @@ export class TreeVisualizationService {
   } // TODO
 
   public initializeTree(data: TreeNode | undefined) {
-
+    if (data) {
+      // 首先將數據設置到 TreeDataService 中
+      this.treeDataService.loadInitialData(data);
+    }
     // Create hierarchy and apply tree layout
     const root = d3.hierarchy(data) as HierarchyNode<unknown>;
 
@@ -275,11 +278,12 @@ export class TreeVisualizationService {
         .style('fill', '#d4e6f7')
         .style('stroke', '#3498db')
         .style('stroke-width', '3px');
-      // 可選：突出顯示同名節點
-      // if (this.treeDataService.getHighlightSimilarEnabled()) {
-      //   const similarNodes = this.treeDataService.findNodesByName(nodeData.name);
-      //   this.highlightSimilarNodes(similarNodes);
-      // }
+      // 突出顯示同名節點
+      const nodeName = nodeData.name;
+      if (nodeName) {
+        const similarNodes = this.treeDataService.findNodesByName(nodeName);
+        this.highlightSimilarNodes(similarNodes, nodeId);
+      }
 
     }
   }
@@ -295,11 +299,93 @@ export class TreeVisualizationService {
     // TODO 發出事件通知應用程式顯示報告列表...
   }
 
-  // 尋找相同公司並提示
-  highlightSameCompany(companyName: string): void {
-    d3.selectAll('.node').classed('highlight-similar', d =>
-      d && (d as any).data && (d as any).data.name === companyName
-    );
+  // 突出顯示相同名稱的節點
+  highlightSimilarNodes(similarNodes: TreeNode[], currentNodeId: string): void {
+    // 1. 首先移除所有之前的高亮並重置樣式
+    this.nodes.select('rect')
+      .style('stroke', (d: { data: TreeNode; }) => {
+        const nodeData = d.data as TreeNode;
+        return nodeData.selected ? '#3498db' : '#000'; // 選中節點藍色，其他為黑色
+      })
+      .style('stroke-width', (d: { data: TreeNode; }) => {
+        const nodeData = d.data as TreeNode;
+        return nodeData.selected ? '3px' : '1px';
+      })
+      .style('stroke-dasharray', null); // 移除虛線效果
+    // 2. 如果沒有相似節點，直接返回
+    if (!similarNodes || similarNodes.length === 0) {
+      return;
+    }
+
+    // 3. 過濾掉當前選中的節點
+    const nodesToHighlight = similarNodes.filter(node => node.id !== currentNodeId);
+
+    console.log('要高亮的節點數:', nodesToHighlight.length);
+
+    // 4. 為每個相似節點添加高亮
+    nodesToHighlight.forEach(node => {
+      if (node.id) {
+        d3.select(`#node-${node.id}`).select('rect')
+          .style('stroke', '#f39c12')  // 橙色邊框
+          .style('stroke-width', '2px')
+          .style('stroke-dasharray', '5, 3');  // 虛線效果
+      }
+    });
+  }
+
+  resetAllNodeStyles(): void {
+    // 重置所有節點樣式到默認狀態
+    this.nodes.select('rect')
+      .style('fill', '#69b3a2')
+      .style('stroke', '#000')
+      .style('stroke-width', '1px')
+      .style('stroke-dasharray', null);
+
+    // 重新應用選中節點的樣式
+    const selectedNodeId = this.treeDataService.getSelectedNodeId();
+    if (selectedNodeId) {
+      d3.select(`#node-${selectedNodeId}`).select('rect')
+        .style('fill', '#d4e6f7')
+        .style('stroke', '#3498db')
+        .style('stroke-width', '3px');
+    }
+  }
+
+  updateView(data: TreeNode): void {
+    // 清除當前視圖
+    if (this.svg) {
+      this.svg.selectAll("*").remove();
+    }
+
+    // 使用新數據重新初始化樹
+    this.initializeTree(data);
+
+    // 重新設置縮放行為
+    this.setupZoom();
+
+    // 如果有選中的節點，恢復其選中狀態
+    const selectedNodeId = this.treeDataService.getSelectedNodeId();
+    if (selectedNodeId) {
+      this.highlightNode(selectedNodeId, 'selected');
+    }
+
+    // 如果有需要高亮的相似節點，恢復高亮
+    const selectedNode = this.treeDataService.getSelectedNode();
+    if (selectedNode) {
+      const similarNodes = this.treeDataService.findNodesByName(selectedNode.name);
+      this.highlightSimilarNodes(similarNodes, selectedNode.id);
+    }
+  }
+
+// 輔助方法：高亮特定節點
+  highlightNode(nodeId: string, className: string): void {
+    d3.select(`#node-${nodeId}`).classed(className, true);
+
+    // 如果需要設置樣式而不是類
+    d3.select(`#node-${nodeId}`).select('rect')
+      .style('fill', '#d4e6f7')
+      .style('stroke', '#3498db')
+      .style('stroke-width', '3px');
   }
 
 

@@ -21,11 +21,22 @@ export class TreeDataService {
   treeState$ = this.treeStateSubject.asObservable();
 
   constructor() {
+
   }
 
   // 載入初始數據
   loadInitialData(data: TreeNode): void {
     this.treeDataSubject.next(data);
+  }
+
+  // 在 TreeDataService 中
+  notifyDataChanged(): void {
+    // 獲取當前數據並重新發出，觸發訂閱者更新
+    const currentData = this.treeDataSubject.getValue();
+    if (currentData) {
+      // 創建新對象以確保引用變化
+      this.treeDataSubject.next({...currentData});
+    }
   }
 
   // 選擇節點
@@ -351,7 +362,20 @@ export class TreeDataService {
     return clone;
   }
 
-  private generateUniqueId(): string {
+  generateUniqueId(): string {
     return uuidv4();
+  }
+
+  public getSelectedNodeId(): string | null {
+    const selectedNode = this.selectedNodeSubject.getValue();
+    return selectedNode ? selectedNode.id : null;
+  }
+
+  public getSelectedNode(): TreeNode | null {
+    return this.selectedNodeSubject.getValue();
+  }
+
+  getTreeData(): TreeNode | null {
+    return this.treeDataSubject.getValue();
   }
 }
