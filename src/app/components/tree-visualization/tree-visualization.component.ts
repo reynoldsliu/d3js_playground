@@ -70,7 +70,6 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
   }
 
   private renderTree(data: TreeNode | null): void {
-    console.log('Rendering tree');
 
     if(data === null){
       return;
@@ -237,7 +236,6 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
 
     // 查找同名節點
     const similarNodes = this.treeDataService.findNodesByName(this.selectedNode.name);
-    console.log('找到同名節點:', similarNodes.length);
 
     // 在視覺化服務中高亮這些節點
     if (this.selectedNode.id) {
@@ -294,7 +292,6 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
    */
   queryLinkedNodes(): void {
     if (!this.selectedNode) return;
-    console.log(this.isQueryingLinks);
     if (this.isQueryingLinks) {
       // Clear all highlights
       this.linkedNodes.clear();
