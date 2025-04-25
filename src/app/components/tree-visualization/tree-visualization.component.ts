@@ -127,9 +127,11 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
       return;
     }
 
-    // 確認刪除
-    if (confirm(`確定要刪除 "${this.selectedNode.name}" 嗎？`)) {
-      this.treeDataService.deleteNode(this.selectedNode.id);
+    if(this.selectedNode.children) {
+      // 確認刪除
+      if (confirm(`確定要刪除 "${this.selectedNode.name}" 及其子節點嗎？`)) {
+        this.treeDataService.deleteNode(this.selectedNode.id);
+      }
     }
   }
 

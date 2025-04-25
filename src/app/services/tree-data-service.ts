@@ -164,10 +164,10 @@ export class TreeDataService {
     }
 
     // 檢查是否有子節點
-    if (targetNode.children && targetNode.children.length > 0) {
-      console.warn('無法刪除帶有子節點的節點');
-      return;
-    }
+    // if (targetNode.children && targetNode.children.length > 0) {
+    //   console.warn('無法刪除帶有子節點的節點');
+    //   return;
+    // }
 
     // 確保有父節點ID
     if (!targetNode.parentId) {
