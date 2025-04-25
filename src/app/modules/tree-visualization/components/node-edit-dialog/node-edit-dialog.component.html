@@ -1,0 +1,85 @@
+<!-- 對話框內容 -->
+<div class="p-dialog-content">
+  <!-- 對話框標題 - 根據操作模式顯示不同標題 -->
+  <h2>{{ isNew ? '新增節點' : (readOnly ? '節點資訊' : '編輯節點') }}</h2>
+
+  <!-- 節點類型選擇 -->
+  <div class="p-field">
+    <label for="type">類型</label>
+    <p-dropdown
+      id="type"
+      [(ngModel)]="node.type"
+      [options]="nodeTypes"
+      optionLabel="label"
+      optionValue="value"
+      [showClear]="true"
+      placeholder="選擇類型"
+      [required]="true"
+      [disabled]="readOnly">
+    </p-dropdown>
+  </div>
+
+  <!-- 節點名稱輸入 -->
+  <div class="p-field">
+    <label for="name">名稱</label>
+    <input pInputText
+      id="name"
+      [(ngModel)]="node.name"
+      [name]="node.name"
+      [required]="true"
+      [disabled]="readOnly">
+  </div>
+
+  <!-- 節點金額輸入 -->
+  <div class="p-field">
+    <label for="amount">金額</label>
+    <p-inputNumber
+      id="amount"
+      [(ngModel)]="node.amount"
+      name="amount"
+      [showButtons]="true"
+      [min]="0"
+      [required]="true"
+      [disabled]="readOnly">
+    </p-inputNumber>
+  </div>
+
+  <!-- 節點備註輸入 -->
+  <div class="p-field">
+    <label for="note">備註</label>
+    <textarea pInputTextarea
+      id="note"
+      [(ngModel)]="node.note"
+      [rows]="3"
+      [cols]="30"
+      [disabled]="readOnly">
+    </textarea>
+  </div>
+</div>
+
+<!-- 非只讀模式下的對話框底部 - 顯示取消和儲存按鈕 -->
+<div class="p-dialog-footer" *ngIf="!readOnly">
+  <button pButton
+    type="button"
+    label="取消"
+    (click)="onCancel()"
+    class="p-button-text">
+  </button>
+  <button pButton
+    type="button"
+    label="儲存"
+    (click)="onConfirm()"
+    [disabled]="!isValid()"
+    class="p-button-primary">
+  </button>
+</div>
+
+<!-- 只讀模式下的對話框底部 - 只顯示關閉按鈕 -->
+<div class="p-dialog-footer" *ngIf="readOnly">
+  <button pButton
+    type="button"
+    label="關閉"
+    (click)="onCancel()"
+    class="p-button-primary">
+  </button>
+</div> 

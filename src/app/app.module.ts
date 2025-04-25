@@ -11,22 +11,24 @@ import { InputTextModule } from 'primeng/inputtext';
 import { ButtonModule } from 'primeng/button';
 import { DropdownModule } from 'primeng/dropdown';
 import { InputNumberModule } from 'primeng/inputnumber';
-import { TooltipModule } from 'primeng/tooltip';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
-import { TreeVisualizationComponent } from './components/tree-visualization/tree-visualization.component';
 import {TreeVisualizationService} from './services/tree-visualization-service';
 import {CompanyBlockComponent} from './components/company-block/company-block.component';
 import {TreeDataService} from './services/tree-data-service';
-import { NodeEditDialogComponent } from './components/node-edit-dialog/node-edit-dialog.component';
 
+// 導入樹狀視覺化模組
+import { TreeVisualizationModule } from './modules/tree-visualization/tree-visualization.module';
+
+/**
+ * 應用程式根模組
+ * 負責匯入所有必要的模組並聲明應用程式的主要組件
+ */
 @NgModule({
   declarations: [
     AppComponent,
-    TreeVisualizationComponent,
-    CompanyBlockComponent,
-    NodeEditDialogComponent
+    CompanyBlockComponent
   ],
   imports: [
     BrowserModule,
@@ -40,7 +42,8 @@ import { NodeEditDialogComponent } from './components/node-edit-dialog/node-edit
     ButtonModule,
     DropdownModule,
     InputNumberModule,
-    AppRoutingModule
+    AppRoutingModule,
+    TreeVisualizationModule
   ],
   providers: [TreeVisualizationService,
   TreeDataService],
