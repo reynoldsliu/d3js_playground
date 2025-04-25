@@ -5,11 +5,15 @@ import {TreeNode} from '../../interfaces/interfaces';
 import {TreeVisualizationService} from '../../services/tree-visualization-service';
 import {range} from 'd3';
 import {TreeDataService} from '../../services/tree-data-service';
+import { DialogService } from 'primeng/dynamicdialog';
+import { NodeEditDialogComponent } from '../node-edit-dialog/node-edit-dialog.component';
+import { TooltipModule } from 'primeng/tooltip';
 
 @Component({
   selector: 'app-tree-visualization',
   templateUrl: './tree-visualization.component.html',
-  styleUrls: ['./tree-visualization.component.scss']
+  styleUrls: ['./tree-visualization.component.scss'],
+  providers: [DialogService]
 })
 export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('treeContainer', {static: true}) public treeContainer!: ElementRef;
@@ -22,7 +26,8 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
   private svg: any;
   public data: TreeNode | null = null;
   constructor(private treeVisualizationService: TreeVisualizationService,
-              private treeDataService: TreeDataService,) {
+              private treeDataService: TreeDataService,
+              private dialogService: DialogService) {
   }
 
   ngOnInit(): void {
@@ -248,5 +253,17 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
     if (this.subscription) {
       this.subscription.unsubscribe();
     }
+  }
+
+  private showNodeInfo(node: TreeNode): void {
+    const ref = this.dialogService.open(NodeEditDialogComponent, {
+      header: '節點資訊',
+      width: '400px',
+      data: {
+        node: node,
+        isNew: false,
+        readOnly: true
+      }
+    });
   }
 }
