@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { DynamicDialogRef, DynamicDialogConfig } from 'primeng/dynamicdialog';
 import { TreeNode } from '../../interfaces/interfaces';
 
@@ -16,12 +16,24 @@ import { TreeNode } from '../../interfaces/interfaces';
   templateUrl: './node-edit-dialog.component.html',
   styleUrls: ['./node-edit-dialog.component.scss']
 })
-export class NodeEditDialogComponent {
+export class NodeEditDialogComponent implements OnInit {
   /**
    * The node being edited or created
    * @type {TreeNode}
    */
   node: TreeNode;
+
+  /**
+   * Indicates whether the node is new or existing
+   * @type {boolean}
+   */
+  isNew: boolean;
+
+  /**
+   * Indicates whether the node is read-only
+   * @type {boolean}
+   */
+  readOnly: boolean;
 
   /**
    * Available node types for selection
@@ -42,6 +54,11 @@ export class NodeEditDialogComponent {
     public config: DynamicDialogConfig
   ) {
     this.node = { ...config.data.node };
+    this.isNew = config.data.isNew;
+    this.readOnly = config.data.readOnly;
+  }
+
+  ngOnInit(): void {
   }
 
   /**
@@ -49,16 +66,22 @@ export class NodeEditDialogComponent {
    * @returns {boolean} True if all required fields are filled, false otherwise
    */
   isValid(): boolean {
-    return !!this.node.name && !!this.node.type && this.node.amount !== undefined;
+    return !!this.node.name && 
+           !!this.node.type && 
+           this.node.amount !== undefined && 
+           this.node.amount !== null;
   }
 
   /**
    * Handles the save action
    * Closes the dialog with the updated node data if the form is valid
    */
-  onSave(): void {
+  onConfirm(): void {
     if (this.isValid()) {
-      this.ref.close(this.node);
+      this.ref.close({
+        action: 'confirm',
+        node: this.node
+      });
     }
   }
 
@@ -67,6 +90,8 @@ export class NodeEditDialogComponent {
    * Closes the dialog without saving changes
    */
   onCancel(): void {
-    this.ref.close();
+    this.ref.close({
+      action: 'cancel'
+    });
   }
 } 

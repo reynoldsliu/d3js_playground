@@ -13,6 +13,7 @@ export interface TreeNode {
   type?: '額度' | '合控';   // 節點類型
   amount?: number;          // 金額
   note?: string;           // 備註內容
+  linkedNodes?: string[];
 }
 
 // 樹狀操作類型

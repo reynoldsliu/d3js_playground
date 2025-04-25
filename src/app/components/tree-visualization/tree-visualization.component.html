@@ -21,28 +21,35 @@
 
   <div class="visualization-container">
     <div #treeContainer class="tree-visualization"></div>
+    <div #tooltip class="custom-tooltip" *ngIf="showTooltip && hoveredNode" [style.left.px]="tooltipX" [style.top.px]="tooltipY">
+      {{ hoveredNode.note || '無備註' }}
+    </div>
   </div>
 
   <div *ngIf="selectedNode" class="sidebar">
     <div class="sidebar-header">
-      <h3>{{selectedNode.name}}</h3>
+      <h3>{{ selectedNode.name }}</h3>
       <span class="node-status" [class.locked]="selectedNode.locked">
-        {{selectedNode.locked ? '已鎖定' : '正常'}}
+        {{ selectedNode.locked ? '已鎖定' : '正常' }}
       </span>
     </div>
 
     <div class="node-details">
       <div class="detail-item">
         <span class="label">ID:</span>
-        <span class="value">{{selectedNode.id}}</span>
+        <span class="value">{{ selectedNode.id }}</span>
       </div>
       <div class="detail-item">
         <span class="label">層級:</span>
-        <span class="value">{{selectedNode.level}}</span>
+        <span class="value">{{ selectedNode.level }}</span>
       </div>
       <div class="detail-item">
         <span class="label">報告數:</span>
-        <span class="value">{{selectedNode.reports?.length || 0}}</span>
+        <span class="value">{{ selectedNode.reports?.length || 0 }}</span>
+      </div>
+      <div class="detail-item" *ngIf="selectedNode.note">
+        <span class="label">備註:</span>
+        <span class="value">{{ selectedNode.note }}</span>
       </div>
     </div>
 
@@ -55,25 +62,56 @@
       </button>
       <button (click)="toggleLock()">
         <i class="fa" [class.fa-lock]="!selectedNode.locked" [class.fa-unlock]="selectedNode.locked"></i>
-        {{selectedNode.locked ? '解鎖' : '鎖定'}}
+        {{ selectedNode.locked ? '解鎖' : '鎖定' }}
       </button>
       <button (click)="linkNode()">
         <i class="fa fa-link"></i> 關聯
       </button>
-<!--      <button (click)="highlightSimilarNodes()">-->
-<!--        <i class="fa fa-search"></i> 查找同名-->
-<!--      </button>-->
+      <button (click)="highlightSimilarNodes()">
+        <i class="fa fa-search"></i> 查找同名
+      </button>
     </div>
 
     <div class="reports-section" *ngIf="selectedNode.reports && selectedNode.reports.length > 0">
       <h4>報告列表</h4>
       <ul class="reports-list">
         <li *ngFor="let report of selectedNode.reports" class="report-item">
-          <span class="report-title">{{report}}</span>
+          <span class="report-title">{{ report }}</span>
         </li>
       </ul>
       <button (click)="showReports()" class="view-all-reports">
         <i class="fa fa-file-text"></i> 查看所有報告
+      </button>
+    </div>
+
+    <div class="sidebar-buttons">
+      <button pButton 
+        type="button" 
+        label="新增節點" 
+        (click)="createNode()" 
+        class="p-button-primary">
+      </button>
+      <button pButton 
+        type="button" 
+        label="編輯節點" 
+        (click)="editNode()" 
+        [disabled]="!selectedNode"
+        class="p-button-secondary">
+      </button>
+      <button pButton 
+        type="button" 
+        label="取消關聯" 
+        (click)="unlinkNode()" 
+        [disabled]="!selectedNode"
+        class="p-button-warning">
+      </button>
+      <button pButton 
+        type="button" 
+        label="查詢關聯" 
+        (click)="queryLinkedNodes()" 
+        [disabled]="!selectedNode"
+        [class.p-button-success]="!isQueryingLinks"
+        [class.p-button-danger]="isQueryingLinks">
       </button>
     </div>
   </div>

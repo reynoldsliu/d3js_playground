@@ -96,6 +96,7 @@ export class TreeVisualizationService {
       reports: [],
       type: '合控',
       amount: 1000000000, // 10億
+      note:'備註',
       children: [
         {
           id: '2',
@@ -148,7 +149,8 @@ export class TreeVisualizationService {
           reports: [],
           type: '合控',
           amount: 200000000, // 2億
-          children: []
+          children: [],
+          note:'備註',
         }
       ]
     } as TreeNode;

@@ -1,4 +1,4 @@
-import {Component, OnInit, ElementRef, ViewChild, AfterViewInit, OnDestroy} from '@angular/core';
+import {Component, OnInit, ElementRef, ViewChild, AfterViewInit, OnDestroy, HostListener} from '@angular/core';
 import {Subscription} from 'rxjs';
 import * as d3 from 'd3';
 import {TreeNode} from '../../interfaces/interfaces';
@@ -17,17 +17,32 @@ import { TooltipModule } from 'primeng/tooltip';
 })
 export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('treeContainer', {static: true}) public treeContainer!: ElementRef;
+  @ViewChild('tooltip') tooltip!: ElementRef;
   private subscription: Subscription | undefined;
   private treeDataSubscription: Subscription | undefined;
 
-
   selectedNode: TreeNode | null = null;
+  hoveredNode: TreeNode | null = null;
   private zoom: any;
   private svg: any;
   public data: TreeNode | null = null;
+  private linkedNodes: Set<string> = new Set();
+  protected isQueryingLinks: boolean = false;
+  showTooltip: boolean = false;
+  tooltipX: number = 0;
+  tooltipY: number = 0;
+
   constructor(private treeVisualizationService: TreeVisualizationService,
               private treeDataService: TreeDataService,
               private dialogService: DialogService) {
+  }
+
+  @HostListener('mousemove', ['$event'])
+  onMouseMove(event: MouseEvent) {
+    if (this.showTooltip) {
+      this.tooltipX = event.clientX + 10;
+      this.tooltipY = event.clientY + 10;
+    }
   }
 
   ngOnInit(): void {
@@ -54,8 +69,12 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
     );
   }
 
-  private renderTree(data: TreeNode): void {
+  private renderTree(data: TreeNode | null): void {
     console.log('Rendering tree');
+
+    if(data === null){
+      return;
+    }
 
     // 添加防止無限循環的標誌
     if (this.isRefreshing) {
@@ -106,42 +125,34 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
   private isRefreshing = false;
 
   createNode(): void {
-    // 獲取新節點的名稱
-    const name = prompt("請輸入新節點名稱：");
-    if (!name) return;
-
-    // 獲取節點類型
-    const type = prompt("請輸入節點類型（額度/合控）：", '額度');
-    if (!type || (type !== '額度' && type !== '合控')) {
-      alert('節點類型必須是「額度」或「合控」');
-      return;
-    }
-
-    // 獲取金額
-    const amountStr = prompt("請輸入金額：", '0');
-    const amount = parseInt(amountStr || '0', 10);
-    if (isNaN(amount)) {
-      alert('金額必須是有效的數字');
-      return;
-    }
-
-    const parentId = this.selectedNode ? this.selectedNode.id : null;
-
-    // 創建新節點對象
     const newNode: TreeNode = {
       id: this.treeDataService.generateUniqueId(),
-      name: name,
-      parentId: parentId,
+      name: '',
+      parentId: this.selectedNode?.id || null,
       level: this.selectedNode ? (this.selectedNode.level || 0) + 1 : 0,
       locked: false,
       selected: false,
       reports: [],
-      type: type as '額度' | '合控',
-      amount: amount
+      type: '額度',
+      amount: 0,
+      note: ''
     };
 
-    // 添加到樹中
-    this.treeDataService.addNode(parentId, newNode);
+    const ref = this.dialogService.open(NodeEditDialogComponent, {
+      header: '新增節點',
+      width: '400px',
+      data: {
+        node: newNode,
+        isNew: true,
+        readOnly: false
+      }
+    });
+
+    ref.onClose.subscribe((result: any) => {
+      if (result?.action === 'confirm') {
+        this.treeDataService.addNode(this.selectedNode?.id || null, result.node);
+      }
+    });
   }
 
   deleteNode(): void {
@@ -161,33 +172,22 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
   }
 
   editNode(): void {
-    if (!this.selectedNode) {
-      return;
-    }
+    if (!this.selectedNode) return;
 
-    // 使用對話框編輯節點屬性
-    const newName = prompt("請輸入新的節點名稱：", this.selectedNode.name);
-    if (!newName) return;
+    const ref = this.dialogService.open(NodeEditDialogComponent, {
+      header: '編輯節點',
+      width: '400px',
+      data: {
+        node: { ...this.selectedNode },
+        isNew: false,
+        readOnly: this.selectedNode.locked
+      }
+    });
 
-    const newType = prompt("請輸入節點類型（額度/合控）：", this.selectedNode.type || '額度');
-    if (!newType || (newType !== '額度' && newType !== '合控')) {
-      alert('節點類型必須是「額度」或「合控」');
-      return;
-    }
-
-    const newAmount = prompt("請輸入金額：", this.selectedNode.amount?.toString() || '0');
-    const parsedAmount = parseInt(newAmount || '0', 10);
-    if (isNaN(parsedAmount)) {
-      alert('金額必須是有效的數字');
-      return;
-    }
-
-    // 更新節點
-    this.treeDataService.updateNode(this.selectedNode.id, {
-      ...this.selectedNode,
-      name: newName,
-      type: newType as '額度' | '合控',
-      amount: parsedAmount
+    ref.onClose.subscribe((result: any) => {
+      if (result?.action === 'confirm') {
+        this.treeDataService.updateNode(this.selectedNode!.id, result.node);
+      }
     });
   }
 
@@ -265,5 +265,84 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
         readOnly: true
       }
     });
+  }
+
+  /**
+   * Unlinks the selected node from all its connections
+   */
+  unlinkNode(): void {
+    if (!this.selectedNode) return;
+
+    // Remove the node from the linked nodes set
+    this.linkedNodes.delete(this.selectedNode.id);
+
+    // Remove the node from other nodes' linked nodes
+    this.data?.children?.forEach(child => {
+      if (child.linkedNodes?.includes(this.selectedNode!.id)) {
+        child.linkedNodes = child.linkedNodes.filter(id => id !== this.selectedNode!.id);
+      }
+    });
+
+    // Clear the selected node's linked nodes
+    this.selectedNode.linkedNodes = [];
+
+    this.renderTree(this.data);
+  }
+
+  /**
+   * Queries and highlights all nodes linked to the selected node
+   */
+  queryLinkedNodes(): void {
+    if (!this.selectedNode) return;
+    console.log(this.isQueryingLinks);
+    if (this.isQueryingLinks) {
+      // Clear all highlights
+      this.linkedNodes.clear();
+      this.isQueryingLinks = false;
+    } else {
+      // Add the selected node and its linked nodes to the set
+      this.linkedNodes.add(this.selectedNode.id);
+      this.selectedNode.linkedNodes?.forEach(id => {
+        this.linkedNodes.add(id);
+      });
+      this.isQueryingLinks = true;
+    }
+
+    this.renderTree(this.data);
+  }
+
+  addNode(node: TreeNode): void {
+    if (!this.data) return;
+
+    if (!this.data.children) {
+      this.data.children = [];
+    }
+
+    this.data.children.push(node);
+    this.renderTree(this.data);
+  }
+
+  updateNode(updatedNode: TreeNode): void {
+    if (!this.data) return;
+
+    const updateNodeInTree = (node: TreeNode): boolean => {
+      if (node.id === updatedNode.id) {
+        Object.assign(node, updatedNode);
+        return true;
+      }
+
+      if (node.children) {
+        for (const child of node.children) {
+          if (updateNodeInTree(child)) {
+            return true;
+          }
+        }
+      }
+
+      return false;
+    };
+
+    updateNodeInTree(this.data);
+    this.renderTree(this.data);
   }
 }

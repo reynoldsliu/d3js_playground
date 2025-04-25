@@ -166,132 +166,55 @@
 }
 
 .sidebar {
-  width: 300px;
-  padding: 20px;
-  background: #f5f7f9;
-  border-left: 1px solid #e1e4e8;
-  overflow-y: auto;
+  width: 200px;
+  padding: 1rem;
+  background-color: #f8f9fa;
+  border-right: 1px solid #dee2e6;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 
-  .sidebar-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid #e1e4e8;
-
-    h3 {
-      margin: 0;
-      font-size: 18px;
-      font-weight: 600;
-    }
-
-    .node-status {
-      padding: 4px 8px;
-      border-radius: 12px;
-      font-size: 12px;
-      background: #28a745;
-      color: white;
-
-      &.locked {
-        background: #dc3545;
-      }
-    }
+  button {
+    width: 100%;
+    margin-bottom: 0.5rem;
   }
+}
 
-  .node-details {
-    margin-bottom: 20px;
+.tree-content {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
 
-    .detail-item {
-      display: flex;
-      margin-bottom: 8px;
+.node circle {
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
 
-      .label {
-        width: 80px;
-        color: #6c757d;
-      }
+.node circle:hover {
+  stroke-width: 3px;
+}
 
-      .value {
-        font-weight: 500;
-      }
-    }
-  }
+.info-icon {
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 12px;
+  opacity: 0.7;
+}
 
-  .node-actions {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
-    margin-bottom: 20px;
+.info-icon:hover {
+  opacity: 1;
+  transform: scale(1.1);
+}
 
-    button {
-      padding: 8px;
-      border: none;
-      border-radius: 4px;
-      background: #007bff;
-      color: white;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 5px;
+.link {
+  stroke: #999;
+  stroke-opacity: 0.6;
+}
 
-      &:hover {
-        background: #0069d9;
-      }
-
-      &:disabled {
-        background: #6c757d;
-        cursor: not-allowed;
-      }
-
-      i {
-        font-size: 14px;
-      }
-    }
-  }
-
-  .reports-section {
-    h4 {
-      font-size: 16px;
-      margin-bottom: 10px;
-    }
-
-    .reports-list {
-      list-style: none;
-      padding: 0;
-      margin: 0 0 15px 0;
-
-      .report-item {
-        padding: 8px 12px;
-        background: white;
-        border: 1px solid #e1e4e8;
-        border-radius: 4px;
-        margin-bottom: 8px;
-
-        &:hover {
-          background: #f8f9fa;
-        }
-      }
-    }
-
-    .view-all-reports {
-      width: 100%;
-      padding: 8px;
-      background: #6c757d;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 5px;
-
-      &:hover {
-        background: #5a6268;
-      }
-    }
-  }
+.node text {
+  font-size: 12px;
+  font-family: sans-serif;
 }
 
 // 樹節點樣式
@@ -332,6 +255,18 @@
     stroke-width: 1.5px;
     stroke-opacity: 0.6;
   }
+
+  .p-tooltip {
+    .p-tooltip-text {
+      background-color: #333;
+      color: white;
+      padding: 0.5rem;
+      border-radius: 4px;
+      font-size: 12px;
+      max-width: 200px;
+      word-wrap: break-word;
+    }
+  }
 }
 
 @keyframes pulse {
@@ -344,4 +279,19 @@
   100% {
     opacity: 1;
   }
+}
+
+.custom-tooltip {
+  position: fixed;
+  background-color: #333;
+  color: white;
+  padding: 0.5rem;
+  border-radius: 4px;
+  font-size: 12px;
+  max-width: 200px;
+  word-wrap: break-word;
+  z-index: 1000;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
