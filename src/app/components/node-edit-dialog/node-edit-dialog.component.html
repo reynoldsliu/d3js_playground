@@ -1,78 +1,74 @@
 <div class="p-dialog-content">
-  <h2>{{ config.data.isNew ? '新增節點' : (config.data.readOnly ? '節點資訊' : '編輯節點') }}</h2>
-  <form class="node-edit-form">
+    <h2>{{ config.data.isNew ? '新增節點' : (config.data.readOnly ? '節點資訊' : '編輯節點') }}</h2>
     <div class="p-field">
-      <label for="type">類型</label>
-      <p-dropdown
-        id="type"
-        name="type"
-        [(ngModel)]="node.type"
-        [options]="nodeTypes"
-        optionLabel="label"
-        optionValue="value"
-        [showClear]="true"
-        placeholder="選擇類型"
-        [required]="true"
-        [disabled]="config.data.readOnly">
-      </p-dropdown>
+        <label for="type">類型</label>
+        <p-dropdown
+                id="type"
+                [(ngModel)]="node.type"
+                [options]="nodeTypes"
+                optionLabel="label"
+                optionValue="value"
+                [showClear]="true"
+                placeholder="選擇類型"
+                [required]="true"
+                [disabled]="config.data.readOnly">
+        </p-dropdown>
     </div>
 
     <div class="p-field">
-      <label for="name">名稱</label>
-      <input pInputText
-        id="name"
-        name="name"
-        [(ngModel)]="node.name"
-        [required]="true"
-        [disabled]="config.data.readOnly">
+        <label for="name">名稱</label>
+        <input pInputText
+               id="name"
+               [(ngModel)]="node.name"
+               [name]="node.name"
+               [required]="true"
+               [disabled]="config.data.readOnly">
     </div>
 
     <div class="p-field">
-      <label for="amount">金額</label>
-      <p-inputNumber
-        id="amount"
-        name="amount"
-        [(ngModel)]="node.amount"
-        [showButtons]="true"
-        [min]="0"
-        [required]="true"
-        [disabled]="config.data.readOnly">
-      </p-inputNumber>
+        <label for="amount">金額</label>
+        <p-inputNumber
+                id="amount"
+                [(ngModel)]="node.amount"
+                name="amount"
+                [showButtons]="true"
+                [min]="0"
+                [required]="true"
+                [disabled]="config.data.readOnly">
+        </p-inputNumber>
     </div>
 
     <div class="p-field">
-      <label for="note">備註</label>
-      <textarea pInputTextarea
-        id="note"
-        name="note"
-        [(ngModel)]="node.note"
-        [rows]="3"
-        [cols]="30"
-        [disabled]="config.data.readOnly">
-      </textarea>
+        <label for="note">備註</label>
+        <textarea pInputTextarea
+                  id="note"
+                  [(ngModel)]="node.note"
+                  [rows]="3"
+                  [cols]="30"
+                  [disabled]="config.data.readOnly">
+        </textarea>
     </div>
-  </form>
 </div>
 <div class="p-dialog-footer" *ngIf="!config.data.readOnly">
-  <button pButton
-    type="button"
-    label="取消"
-    (click)="onCancel()"
-    class="p-button-text">
-  </button>
-  <button pButton
-    type="button"
-    label="儲存"
-    (click)="onConfirm()"
-    [disabled]="!isValid()"
-    class="p-button-primary">
-  </button>
+    <button pButton
+            type="button"
+            label="取消"
+            (click)="onCancel()"
+            class="p-button-text">
+    </button>
+    <button pButton
+            type="button"
+            label="儲存"
+            (click)="onConfirm()"
+            [disabled]="!isValid()"
+            class="p-button-primary">
+    </button>
 </div>
 <div class="p-dialog-footer" *ngIf="config.data.readOnly">
-  <button pButton
-    type="button"
-    label="關閉"
-    (click)="onCancel()"
-    class="p-button-primary">
-  </button>
+    <button pButton
+            type="button"
+            label="關閉"
+            (click)="onCancel()"
+            class="p-button-primary">
+    </button>
 </div>
