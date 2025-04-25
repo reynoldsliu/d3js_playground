@@ -39,6 +39,21 @@ export class TreeVisualizationService {
         stroke: '#f39c12',
         strokeWidth: '2px',
         strokeDash: '5,3'
+      },
+      credit: {  // 額度樣式
+        fill: '#e3f2fd',
+        stroke: '#64b5f6',
+        strokeWidth: '1px'
+      },
+      control: {  // 合控樣式
+        fill: '#f3e5f5',
+        stroke: '#ba68c8',
+        strokeWidth: '1px'
+      },
+      company: {  // 公司（根節點）樣式
+        fill: '#e8f5e9',
+        stroke: '#2e7d32',
+        strokeWidth: '2px'
       }
     },
     link: {
@@ -73,65 +88,66 @@ export class TreeVisualizationService {
     return {
       id: '1',
       name: '三雅投資股份有限公司',
-      position: '',
+      position: '總公司',
       level: 0,
       locked: false,
       selected: false,
-      percentage1: 1.24,
-      percentage2: 13.74,
-      note: '主要投資公司',
+      parentId: null,
+      reports: [],
+      type: '合控',
+      amount: 1000000000, // 10億
       children: [
         {
           id: '2',
-          name: '王光祥',
-          position: '董事長',
+          name: '額度A',
+          position: '主要額度',
           parentId: '1',
           level: 1,
           locked: false,
           selected: false,
-          percentage1: 1.36,
-          percentage2: 15.06,
-          note: '公司主要決策者',
+          reports: [],
+          type: '額度',
+          amount: 500000000, // 5億
           children: []
         },
         {
           id: '3',
-          name: '陳麒盛',
-          position: '監察人',
+          name: '合控A',
+          position: '主要合控',
           parentId: '1',
           level: 1,
           locked: false,
           selected: false,
-          percentage1: 0.19,
-          percentage2: 2.08,
-          note: '負責公司監督',
+          reports: [],
+          type: '合控',
+          amount: 300000000, // 3億
           children: [
             {
               id: '5',
-              name: '山圓建設股份有限公司',
-              position: '',
+              name: '額度B',
+              position: '子額度',
               parentId: '3',
               level: 2,
               locked: false,
               selected: false,
-              percentage1: 9.04,
-              percentage2: 9.04,
-              note: '建設公司子公司',
+              reports: [],
+              type: '額度',
+              amount: 200000000, // 2億
               children: []
             }
           ]
         },
         {
           id: '4',
-          name: '王雅麟',
-          position: '董事',
+          name: '合控B',
+          position: '次要合控',
           parentId: '1',
           level: 1,
           locked: false,
           selected: false,
-          percentage1: 0.12,
-          percentage2: 1.34,
-          note: '負責公司營運',
+          reports: [],
+          type: '合控',
+          amount: 200000000, // 2億
           children: []
         }
       ]
@@ -145,7 +161,7 @@ export class TreeVisualizationService {
     if (data) {
       this.treeDataService.loadInitialData(data);
     }
-    
+
     const root = d3.hierarchy(data) as HierarchyNode<unknown>;
     const tree = d3.tree().nodeSize([this.nodeWidth * 1.5, this.nodeHeight * 3]);
     tree(root);
@@ -177,7 +193,7 @@ export class TreeVisualizationService {
         const targetX = d.target.x;
         const targetY = d.target.y;
         const midY = (sourceY + targetY) / 2;
-        
+
         return `M${sourceX},${sourceY}
                 L${sourceX},${midY}
                 L${targetX},${midY}
@@ -214,10 +230,27 @@ export class TreeVisualizationService {
       .attr('ry', 5)
       .style('fill', (d: any) => {
         const nodeData = d.data as TreeNode;
-        return nodeData.selected ? this.styles.node.selected.fill : this.styles.node.default.fill;
+        if (nodeData.level === 0) return this.styles.node.company.fill;
+        if (nodeData.type === '額度') return this.styles.node.credit.fill;
+        if (nodeData.type === '合控') return this.styles.node.control.fill;
+        return this.styles.node.default.fill;
       })
-      .style('stroke', this.styles.node.default.stroke)
-      .style('stroke-width', this.styles.node.default.strokeWidth);
+      .style('stroke', (d: any) => {
+        const nodeData = d.data as TreeNode;
+        if (nodeData.selected) return this.styles.node.selected.stroke;
+        if (nodeData.level === 0) return this.styles.node.company.stroke;
+        if (nodeData.type === '額度') return this.styles.node.credit.stroke;
+        if (nodeData.type === '合控') return this.styles.node.control.stroke;
+        return this.styles.node.default.stroke;
+      })
+      .style('stroke-width', (d: any) => {
+        const nodeData = d.data as TreeNode;
+        if (nodeData.selected) return this.styles.node.selected.strokeWidth;
+        if (nodeData.level === 0) return this.styles.node.company.strokeWidth;
+        if (nodeData.type === '額度') return this.styles.node.credit.strokeWidth;
+        if (nodeData.type === '合控') return this.styles.node.control.strokeWidth;
+        return this.styles.node.default.strokeWidth;
+      });
 
     // Add name text
     this.nodes.append('text')
@@ -245,8 +278,8 @@ export class TreeVisualizationService {
       .attr('class', 'node-percentages')
       .text((d: { data: TreeNode; }) => {
         const node = d.data as TreeNode;
-        if (node.percentage1 !== undefined && node.percentage2 !== undefined) {
-          return `${node.percentage1}% / ${node.percentage2}%`;
+        if (node.type && node.amount) {
+          return `${node.type}: ${node.amount.toLocaleString()}元`;
         }
         return '';
       })
@@ -285,7 +318,7 @@ export class TreeVisualizationService {
 
     // 修改鼠标事件处理
     let activeTooltip = false;
-    
+
     noteIcons
       .on('mouseover', (event: any, d: any) => {
         const nodeData = d.data as TreeNode;
@@ -294,7 +327,7 @@ export class TreeVisualizationService {
           tooltip
             .style('visibility', 'visible')
             .text(nodeData.note);
-          
+
           const iconBox = (event.target as SVGElement).getBoundingClientRect();
           tooltip
             .style('left', `${iconBox.right + 10}px`)
@@ -359,7 +392,7 @@ export class TreeVisualizationService {
 
     // 获取所有节点的边界
     const bounds = this.g.node().getBBox();
-    
+
     // 考虑节点的实际大小和边距
     const padding = 50;
     const effectiveWidth = bounds.width + this.nodeWidth + padding * 2;
@@ -402,11 +435,11 @@ export class TreeVisualizationService {
     event.stopPropagation();
     const nodeData = d.data as TreeNode;
     const nodeId = nodeData.id;
-    
+
     if (nodeId) {
       // 获取当前的变换状态
       const currentTransform = d3.zoomTransform(this.svg.node());
-      
+
       // 更新节点选择状态
       this.treeDataService.selectNode(nodeId);
       this.updateNodeStyles(nodeId, nodeData.name);
@@ -429,16 +462,26 @@ export class TreeVisualizationService {
 
   // 新增方法：统一更新节点样式
   private updateNodeStyles(selectedNodeId: string, nodeName: string) {
-    // 重置所有节点样式到默认状态
+    // 重置所有节点的选中状态
     this.nodes.select('rect')
-      .style('fill', this.styles.node.default.fill)
-      .style('stroke', this.styles.node.default.stroke)
-      .style('stroke-width', this.styles.node.default.strokeWidth)
+      .style('stroke', (d: any) => {
+        const nodeData = d.data as TreeNode;
+        if (nodeData.level === 0) return this.styles.node.company.stroke;
+        if (nodeData.type === '額度') return this.styles.node.credit.stroke;
+        if (nodeData.type === '合控') return this.styles.node.control.stroke;
+        return this.styles.node.default.stroke;
+      })
+      .style('stroke-width', (d: any) => {
+        const nodeData = d.data as TreeNode;
+        if (nodeData.level === 0) return this.styles.node.company.strokeWidth;
+        if (nodeData.type === '額度') return this.styles.node.credit.strokeWidth;
+        if (nodeData.type === '合控') return this.styles.node.control.strokeWidth;
+        return this.styles.node.default.strokeWidth;
+      })
       .style('stroke-dasharray', null);
 
     // 设置选中节点样式
     d3.select(`#node-${selectedNodeId}`).select('rect')
-      .style('fill', this.styles.node.selected.fill)
       .style('stroke', this.styles.node.selected.stroke)
       .style('stroke-width', this.styles.node.selected.strokeWidth);
 
@@ -484,8 +527,8 @@ export class TreeVisualizationService {
 
   updateView(data: TreeNode): void {
     // 保存当前的变换状态
-    const currentTransform = this.svg && this.svg.node() ? 
-      d3.zoomTransform(this.svg.node()) : 
+    const currentTransform = this.svg && this.svg.node() ?
+      d3.zoomTransform(this.svg.node()) :
       d3.zoomIdentity.translate(this.svgWidth / 2, this.nodeHeight * 2).scale(1);
 
     // 清除当前视图
@@ -585,7 +628,7 @@ export class TreeVisualizationService {
         const targetX = d.target.x;
         const targetY = d.target.y;
         const midY = (sourceY + targetY) / 2;
-        
+
         return `M${sourceX},${sourceY}
                 L${sourceX},${midY}
                 L${targetX},${midY}
@@ -645,40 +688,78 @@ export class TreeVisualizationService {
       .attr('height', this.nodeHeight)
       .attr('x', -this.nodeWidth / 2)
       .attr('y', -this.nodeHeight / 2)
-      .style('fill', '#e8f5e9')
-      .style('stroke', '#81c784')
+      .style('fill', (d: { data: TreeNode; }) => {
+        const nodeData = d.data as TreeNode;
+        if (nodeData.level === 0) return '#e8f5e9'; // 根節點用綠色
+        return nodeData.type === '額度' ? '#f3e5f5' : '#e3f2fd'; // 額度用紫色，合控用藍色
+      })
+      .style('stroke', (d: { data: TreeNode; }) => {
+        const nodeData = d.data as TreeNode;
+        if (nodeData.level === 0) return '#81c784'; // 根節點用深綠色
+        return nodeData.type === '額度' ? '#ba68c8' : '#64b5f6'; // 額度用深紫色，合控用深藍色
+      })
       .attr('rx', 5)
       .attr('ry', 5);
 
-    // Add name text
-    selection.append('text')
-      .attr('dy', '-0.5em')
-      .attr('text-anchor', 'middle')
-      .text((d: { data: TreeNode; }) => (d.data as TreeNode).name)
-      .style('fill', '#2e7d32')
-      .style('font-size', '12px')
-      .style('font-weight', 'bold');
+    // Add content based on node level
+    selection.each(function(this: SVGGElement, d: { data: TreeNode; }) {
+      const nodeData = d.data as TreeNode;
+      const nodeGroup = d3.select(this);
+      const isCredit = nodeData.type === '額度';
+      const textColor = nodeData.level === 0 ? '#2e7d32' : (isCredit ? '#ba68c8' : '#64b5f6');
 
-    // Add reports count
-    selection.append('text')
-      .attr('dy', '1em')
-      .attr('text-anchor', 'middle')
-      .text((d: { data: TreeNode; }) => {
-        const nodeData = d.data as TreeNode;
-        return `報告: ${nodeData.reports ? nodeData.reports.length : 0}`;
-      })
-      .style('fill', '#616161')
-      .style('font-size', '10px');
+      if (nodeData.level === 0) {
+        // Root node - show company info
+        nodeGroup.append('text')
+          .attr('dy', '-0.5em')
+          .attr('text-anchor', 'middle')
+          .text(nodeData.name)
+          .style('fill', textColor)
+          .style('font-size', '14px')
+          .style('font-weight', 'bold');
 
-    // Add lock status
-    selection.append('text')
-      .attr('dy', '2em')
-      .attr('text-anchor', 'middle')
-      .text((d: { data: TreeNode; }) => {
-        const nodeData = d.data as TreeNode;
-        return nodeData.locked ? '🔒' : '';
-      })
-      .style('font-size', '10px');
+        if (nodeData.position) {
+          nodeGroup.append('text')
+            .attr('dy', '1em')
+            .attr('text-anchor', 'middle')
+            .text(nodeData.position)
+            .style('fill', textColor)
+            .style('font-size', '12px');
+        }
+      } else {
+        // Child nodes - show ID, type and amount
+        nodeGroup.append('text')
+          .attr('dy', '-0.5em')
+          .attr('text-anchor', 'middle')
+          .text(`ID: ${nodeData.id}`)
+          .style('fill', textColor)
+          .style('font-size', '12px')
+          .style('font-weight', 'bold');
+
+        nodeGroup.append('text')
+          .attr('dy', '1em')
+          .attr('text-anchor', 'middle')
+          .text(`${nodeData.type}`)
+          .style('fill', textColor)
+          .style('font-size', '12px');
+
+        nodeGroup.append('text')
+          .attr('dy', '2em')
+          .attr('text-anchor', 'middle')
+          .text(`${nodeData.amount?nodeData.amount.toLocaleString():0}元`)
+          .style('fill', textColor)
+          .style('font-size', '12px');
+      }
+
+      // Add lock status for all nodes
+      if (nodeData.locked) {
+        nodeGroup.append('text')
+          .attr('dy', nodeData.level === 0 ? '2em' : '3em')
+          .attr('text-anchor', 'middle')
+          .text('🔒')
+          .style('font-size', '10px');
+      }
+    });
   }
 
   // 添加自动居中方法
@@ -687,7 +768,7 @@ export class TreeVisualizationService {
 
     // 获取所有节点的边界
     const bounds = this.g.node().getBBox();
-    
+
     // 考虑节点的实际大小和边距
     const padding = 50;
     const effectiveWidth = bounds.width + this.nodeWidth + padding * 2;
@@ -716,7 +797,7 @@ export class TreeVisualizationService {
   private initializeTooltip() {
     // 移除可能存在的旧 tooltip
     d3.select('body').selectAll('.node-tooltip').remove();
-    
+
     // 创建新的 tooltip
     const tooltip = d3.select('body').append('div')
       .attr('class', 'node-tooltip')

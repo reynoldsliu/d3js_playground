@@ -101,9 +101,24 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
   private isRefreshing = false;
 
   createNode(): void {
-    // 可以使用一個簡單的對話框來獲取新節點的名稱
+    // 獲取新節點的名稱
     const name = prompt("請輸入新節點名稱：");
     if (!name) return;
+
+    // 獲取節點類型
+    const type = prompt("請輸入節點類型（額度/合控）：", '額度');
+    if (!type || (type !== '額度' && type !== '合控')) {
+      alert('節點類型必須是「額度」或「合控」');
+      return;
+    }
+
+    // 獲取金額
+    const amountStr = prompt("請輸入金額：", '0');
+    const amount = parseInt(amountStr || '0', 10);
+    if (isNaN(amount)) {
+      alert('金額必須是有效的數字');
+      return;
+    }
 
     const parentId = this.selectedNode ? this.selectedNode.id : null;
 
@@ -115,7 +130,9 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
       level: this.selectedNode ? (this.selectedNode.level || 0) + 1 : 0,
       locked: false,
       selected: false,
-      reports: []
+      reports: [],
+      type: type as '額度' | '合控',
+      amount: amount
     };
 
     // 添加到樹中
@@ -143,14 +160,29 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
       return;
     }
 
-    // 使用簡單對話框編輯節點名稱
+    // 使用對話框編輯節點屬性
     const newName = prompt("請輸入新的節點名稱：", this.selectedNode.name);
-    if (!newName || newName === this.selectedNode.name) return;
+    if (!newName) return;
+
+    const newType = prompt("請輸入節點類型（額度/合控）：", this.selectedNode.type || '額度');
+    if (!newType || (newType !== '額度' && newType !== '合控')) {
+      alert('節點類型必須是「額度」或「合控」');
+      return;
+    }
+
+    const newAmount = prompt("請輸入金額：", this.selectedNode.amount?.toString() || '0');
+    const parsedAmount = parseInt(newAmount || '0', 10);
+    if (isNaN(parsedAmount)) {
+      alert('金額必須是有效的數字');
+      return;
+    }
 
     // 更新節點
     this.treeDataService.updateNode(this.selectedNode.id, {
       ...this.selectedNode,
-      name: newName
+      name: newName,
+      type: newType as '額度' | '合控',
+      amount: parsedAmount
     });
   }
 
