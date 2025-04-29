@@ -40,8 +40,14 @@ export class TreeDataService {
   }
 
   // 選擇節點
-  selectNode(nodeId: string): void {
-    // TODO: 實現選擇節點邏輯
+  selectNode(nodeId: string | null): void {
+    if (nodeId === null) {
+      // 清空選擇
+      this.deselectNode();
+      return;
+    }
+
+    // 以下為原有邏輯
     const currentData = this.treeDataSubject.getValue();
     if (!currentData) {
       return;
@@ -60,6 +66,26 @@ export class TreeDataService {
       // 更新選中節點的主題
       this.selectedNodeSubject.next(targetNode);
     }
+
+    // 發出更新後的樹數據
+    this.treeDataSubject.next(newData);
+  }
+
+  // 清除節點選擇
+  deselectNode(): void {
+    const currentData = this.treeDataSubject.getValue();
+    if (!currentData) {
+      return;
+    }
+
+    // 創建數據的深拷貝以避免直接修改
+    const newData = this.deepCloneTree(currentData);
+
+    // 重置所有節點的選擇狀態
+    this.resetSelection(newData);
+
+    // 清空選中節點
+    this.selectedNodeSubject.next(null);
 
     // 發出更新後的樹數據
     this.treeDataSubject.next(newData);
@@ -282,6 +308,195 @@ export class TreeDataService {
     }
 // 發出更新後的樹
     this.treeDataSubject.next(newData);
+  }
+
+  // 移動節點到新的父節點
+  // 在 TreeDataService 中添加
+
+// 移動節點 - 根據模式決定操作
+  // 移動節點 - 根據模式決定操作
+  moveNode(sourceId: string, targetId: string, mode: 'reorder' | 'nest' = 'nest'): void {
+    console.log('moveNode called:', { sourceId, targetId, mode });
+
+    if (mode === 'reorder') {
+      console.log('Using reorderNode');
+      this.reorderNode(sourceId, targetId);
+    } else {
+      console.log('Using nestNode');
+      this.nestNode(sourceId, targetId);
+    }
+  }
+
+// 重新排序節點
+  // 完成 reorderNode 方法
+  private reorderNode(sourceId: string, targetId: string): void {
+    console.log('reorderNode:', { sourceId, targetId });
+
+    const currentData = this.treeDataSubject.getValue();
+    if (!currentData) {
+      console.error('No current data available');
+      return;
+    }
+
+    const newData = this.deepCloneTree(currentData);
+    console.log('Data cloned');
+
+    // 找到源節點和目標節點
+    const sourceNode = this.getNodeByIdRecursion(newData, sourceId);
+    const targetNode = this.getNodeByIdRecursion(newData, targetId);
+
+    console.log('Found nodes:', {
+      sourceFound: !!sourceNode,
+      targetFound: !!targetNode
+    });
+
+    if (!sourceNode || !targetNode) {
+      console.error('Source or target node not found');
+      return;
+    }
+
+    // 檢查父節點
+    console.log('Parent IDs:', {
+      sourceParent: sourceNode.parentId,
+      targetParent: targetNode.parentId
+    });
+
+    // 確保兩者有相同的父節點
+    if (sourceNode.parentId !== targetNode.parentId) {
+      console.error('Nodes must have the same parent for reordering');
+      return;
+    }
+
+    // 獲取父節點
+    const parentNode = sourceNode.parentId ?
+      this.getNodeByIdRecursion(newData, sourceNode.parentId) :
+      newData; // 如果是頂層節點，使用根節點
+
+    if (!parentNode || !parentNode.children) {
+      console.error('Parent node not found or has no children');
+      return;
+    }
+
+    // 在父節點的子節點數組中找到源節點和目標節點的索引
+    const sourceIndex = parentNode.children.findIndex(child => child.id === sourceId);
+    const targetIndex = parentNode.children.findIndex(child => child.id === targetId);
+
+    if (sourceIndex === -1 || targetIndex === -1) {
+      console.error('Source or target node not found in parent\'s children');
+      return;
+    }
+
+    console.log('Swapping nodes at indices:', { sourceIndex, targetIndex });
+
+    // 交換位置
+    [parentNode.children[sourceIndex], parentNode.children[targetIndex]] =
+      [parentNode.children[targetIndex], parentNode.children[sourceIndex]];
+
+    // 發出更新後的樹數據
+    this.treeDataSubject.next(newData);
+    console.log('Tree data updated after reordering nodes');
+  }
+
+// 嵌套節點
+  // 完成 nestNode 方法
+  private nestNode(sourceId: string, targetId: string): void {
+    console.log('nestNode:', { sourceId, targetId });
+
+    const currentData = this.treeDataSubject.getValue();
+    if (!currentData) {
+      console.error('No current data available');
+      return;
+    }
+
+    const newData = this.deepCloneTree(currentData);
+    console.log('Data cloned');
+
+    // 找到源節點和目標節點
+    const sourceNode = this.getNodeByIdRecursion(newData, sourceId);
+    const targetNode = this.getNodeByIdRecursion(newData, targetId);
+
+    console.log('Found nodes:', {
+      sourceFound: !!sourceNode,
+      targetFound: !!targetNode,
+      sourceData: sourceNode,
+      targetData: targetNode
+    });
+
+    if (!sourceNode || !targetNode) {
+      console.error('Source or target node not found');
+      return;
+    }
+
+    // 檢查循環依賴 - 確保目標節點不是源節點的子節點
+    if (this.isDescendant(sourceNode, targetId)) {
+      console.error('Cannot move a node to its own descendant');
+      return;
+    }
+
+    // 檢查是否已經是目標節點的子節點
+    if (sourceNode.parentId === targetId) {
+      console.log('Node is already a child of the target node');
+      return;
+    }
+
+    // 從原父節點中移除源節點
+    if (sourceNode.parentId) {
+      const oldParent = this.getNodeByIdRecursion(newData, sourceNode.parentId);
+      if (oldParent && oldParent.children) {
+        oldParent.children = oldParent.children.filter(child => child.id !== sourceId);
+
+        // 如果父節點的子節點數組為空，可以刪除該屬性
+        if (oldParent.children.length === 0) {
+          delete oldParent.children;
+        }
+      }
+    } else if (newData.id !== sourceId) {
+      // 如果是頂層節點（但不是根節點）
+      if (newData.children) {
+        newData.children = newData.children.filter(child => child.id !== sourceId);
+        if (newData.children.length === 0) {
+          delete newData.children;
+        }
+      }
+    }
+
+    // 初始化目標節點的子節點數組（如果不存在）
+    if (!targetNode.children) {
+      targetNode.children = [];
+    }
+
+    // 更新源節點的父節點ID和層級
+    sourceNode.parentId = targetId;
+    sourceNode.level = (targetNode.level || 0) + 1;
+
+    // 遞迴更新所有子節點的層級
+    this.updateChildrenLevels(sourceNode);
+
+    // 將源節點添加到目標節點的子節點數組
+    targetNode.children.push(sourceNode);
+
+    // 發出更新後的樹數據
+    this.treeDataSubject.next(newData);
+    console.log('Tree data updated after nesting node');
+  }
+
+// 檢查節點是否是另一個節點的後代
+  isDescendant(node: TreeNode, possibleDescendantId: string): boolean {
+    if (!node.children) return false;
+
+    return node.children.some(child =>
+      child.id === possibleDescendantId || this.isDescendant(child, possibleDescendantId)
+    );
+  }
+
+// 更新節點及其所有子節點的層級
+  private updateChildrenLevels(node: TreeNode): void {
+    if (!node.children) return;
+
+    node.children.forEach(child => {
+      child.level = (node.level || 0) + 1;
+      this.updateChildrenLevels(child);
+    });
   }
 
   // 查找相同名稱的節點

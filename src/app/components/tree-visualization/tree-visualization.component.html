@@ -10,6 +10,17 @@
       <button (click)="resetZoom()" title="重置視圖">
         <i class="fa fa-expand"></i> 重置
       </button>
+      <!-- 在控制面板中添加 -->
+      <div class="drag-mode-selector">
+        <label class="mode-option">
+          <input type="radio" name="dragMode" [(ngModel)]="dragMode" value="nest">
+          移動節點 (將節點移動為目標的子節點)
+        </label>
+        <label class="mode-option">
+          <input type="radio" name="dragMode" [(ngModel)]="dragMode" value="reorder">
+          交換位置 (交換兩節點位置)
+        </label>
+      </div>
     </div>
 
     <div class="tree-actions">
@@ -85,30 +96,30 @@
     </div>
 
     <div class="sidebar-buttons">
-      <button pButton 
-        type="button" 
-        label="新增節點" 
-        (click)="createNode()" 
+      <button pButton
+        type="button"
+        label="新增節點"
+        (click)="createNode()"
         class="p-button-primary">
       </button>
-      <button pButton 
-        type="button" 
-        label="編輯節點" 
-        (click)="editNode()" 
+      <button pButton
+        type="button"
+        label="編輯節點"
+        (click)="editNode()"
         [disabled]="!selectedNode"
         class="p-button-secondary">
       </button>
-      <button pButton 
-        type="button" 
-        label="取消關聯" 
-        (click)="unlinkNode()" 
+      <button pButton
+        type="button"
+        label="取消關聯"
+        (click)="unlinkNode()"
         [disabled]="!selectedNode"
         class="p-button-warning">
       </button>
-      <button pButton 
-        type="button" 
-        label="查詢關聯" 
-        (click)="queryLinkedNodes()" 
+      <button pButton
+        type="button"
+        label="查詢關聯"
+        (click)="queryLinkedNodes()"
         [disabled]="!selectedNode"
         [class.p-button-success]="!isQueryingLinks"
         [class.p-button-danger]="isQueryingLinks">

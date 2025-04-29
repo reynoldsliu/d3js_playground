@@ -295,3 +295,66 @@
   transition: opacity 0.3s ease;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
+
+.node {
+  cursor: grab;
+  pointer-events: all;
+
+  rect {
+    pointer-events: all;
+  }
+
+  &.dragging {
+    cursor: grabbing;
+    opacity: 0.7;
+    z-index: 1000; /* 確保拖動節點在最上層 */
+  }
+}
+
+.node {
+  cursor: grab;
+
+  &.dragging {
+    cursor: grabbing;
+    opacity: 0.7;
+
+    rect {
+      stroke: #f39c12;
+      stroke-width: 2px;
+    }
+  }
+
+  // 嵌套模式視覺提示 - 顯示為節點可以接收新的子節點
+  &.drag-over-nest rect {
+    stroke: #2ecc71;
+    stroke-width: 3px;
+    stroke-dasharray: 5,3;
+  }
+
+  // 重新排序模式視覺提示 - 顯示為節點可以在同級位置交換
+  &.drag-over-reorder rect {
+    stroke: #3498db;
+    stroke-width: 3px;
+  }
+}
+
+.drag-mode-selector {
+  margin: 15px 0;
+  padding: 10px;
+  background-color: #f5f5f5;
+  border-radius: 5px;
+
+  .mode-option {
+    display: block;
+    margin-bottom: 8px;
+    cursor: pointer;
+
+    input[type="radio"] {
+      margin-right: 8px;
+    }
+
+    &:hover {
+      color: #3498db;
+    }
+  }
+}

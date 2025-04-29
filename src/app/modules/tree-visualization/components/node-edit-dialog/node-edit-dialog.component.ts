@@ -64,9 +64,7 @@ export class NodeEditDialogComponent implements OnInit {
    */
   ngOnInit(): void {
     // 確保所有必需的屬性都已設置
-    if (!this.node.type) {
-      this.node.type = '額度';
-    }
+    // 注意：不再默認設置node.type，讓用戶自行選擇
     
     if (this.node.amount === undefined) {
       this.node.amount = 0;

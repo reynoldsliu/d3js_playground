@@ -5,9 +5,10 @@ import {TreeNode} from '../../interfaces/interfaces';
 import {TreeVisualizationService} from '../../services/tree-visualization-service';
 import {range} from 'd3';
 import {TreeDataService} from '../../services/tree-data-service';
-import { DialogService } from 'primeng/dynamicdialog';
-import { NodeEditDialogComponent } from '../node-edit-dialog/node-edit-dialog.component';
-import { TooltipModule } from 'primeng/tooltip';
+import {DialogService} from 'primeng/dynamicdialog';
+import {NodeEditDialogComponent} from '../node-edit-dialog/node-edit-dialog.component';
+import {TooltipModule} from 'primeng/tooltip';
+import {FormBuilder, FormGroup} from '@angular/forms';
 
 @Component({
   selector: 'app-tree-visualization',
@@ -20,6 +21,9 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
   @ViewChild('tooltip') tooltip!: ElementRef;
   private subscription: Subscription | undefined;
   private treeDataSubscription: Subscription | undefined;
+  private dragDropSubscription: Subscription | undefined;
+  public dragMode: 'reorder' | 'nest' = 'nest'; // 默認為嵌套模式
+
 
   selectedNode: TreeNode | null = null;
   hoveredNode: TreeNode | null = null;
@@ -32,9 +36,15 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
   tooltipX: number = 0;
   tooltipY: number = 0;
 
-  constructor(private treeVisualizationService: TreeVisualizationService,
+  public form: FormGroup;
+
+  constructor(private fb: FormBuilder,
+              private treeVisualizationService: TreeVisualizationService,
               private treeDataService: TreeDataService,
               private dialogService: DialogService) {
+    this.form = this.fb.group({
+      dragMode: ['nest'] // 默認值
+    });
   }
 
   @HostListener('mousemove', ['$event'])
@@ -53,6 +63,25 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
       }
     );
 
+    // 訂閱拖放完成事件
+    this.dragDropSubscription = this.treeVisualizationService.dragDropCompleted$.subscribe(
+      ({sourceId, targetId, mode}) => {
+        console.log('Tree component received drag-drop event:', { sourceId, targetId, mode });
+        this.treeDataService.moveNode(sourceId, targetId, mode);
+      }
+    );
+
+    // 監聽拖放模式變化
+
+      this.form.get('dragMode')!.valueChanges.subscribe(mode => {
+        this.dragMode = mode;
+        this.treeVisualizationService.setDragMode(mode);
+      });
+
+
+    // 初始設置
+    this.treeVisualizationService.setDragMode(this.dragMode);
+
     // 載入數據 (只在第一次初始化時)
     this.loadTreeData();
   }
@@ -63,15 +92,24 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
       data => {
         if (data) {
           this.data = data;
+          const containerElement = this.treeContainer.nativeElement;
+          containerElement.classList.add('tree-drag-container');
           this.renderTree(data);
         }
+      });
+    // 訂閱拖放完成事件
+    this.dragDropSubscription = this.treeVisualizationService.dragDropCompleted$.subscribe(
+      ({sourceId, targetId}) => {
+        // 調用數據服務移動節點
+        this.treeDataService.moveNode(sourceId, targetId);
+        // 數據服務會通知所有訂閱者，包括負責渲染的訂閱
       }
     );
   }
 
   private renderTree(data: TreeNode | null): void {
 
-    if(data === null){
+    if (data === null) {
       return;
     }
 
@@ -124,6 +162,33 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
   private isRefreshing = false;
 
   createNode(): void {
+    // Get the current tree height
+    const currentTreeHeight = this.treeVisualizationService.getCurrentTreeHeight();
+    console.log('Current tree height before adding node:', currentTreeHeight);
+
+    // Check if adding to an "額度" node
+    if (this.selectedNode?.type === '額度') {
+      alert('額度無法新增子節點');
+      return;
+    }
+
+    // If we have a selected node, check its level
+    if (this.selectedNode) {
+      const selectedLevel = this.selectedNode.level || 0;
+
+      // If adding to a node at level 3, we would exceed the max tree height of 4
+      if (selectedLevel >= 4) {
+        alert('資料層數超過限制 無法新增子節點');
+        return;
+      }
+
+      // For "合控" nodes, we auto-add a child, so level 2 is as deep as we can go
+      if (selectedLevel === 3 && currentTreeHeight >= 4) {
+        alert('資料層數將超過限制 無法新增子節點');
+        return;
+      }
+    }
+
     const newNode: TreeNode = {
       id: this.treeDataService.generateUniqueId(),
       name: '',
@@ -132,7 +197,7 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
       locked: false,
       selected: false,
       reports: [],
-      type: '額度',
+      type: undefined, // 移除默認類型，讓用戶在對話框中選擇
       amount: 0,
       note: ''
     };
@@ -149,7 +214,47 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
 
     ref.onClose.subscribe((result: any) => {
       if (result?.action === 'confirm') {
+        console.log('Adding node at level:', newNode.level);
+
+        // Only proceed if adding won't exceed tree height limit
+        const willExceedLimit =
+          (newNode.level || 0) >= 3 ||
+          (result.node.type === '合控' && (newNode.level || 0) >= 2);
+
+        if (willExceedLimit && currentTreeHeight >= 4) {
+          alert('資料層數超過限制 無法新增子節點');
+          return;
+        }
+
         this.treeDataService.addNode(this.selectedNode?.id || null, result.node);
+
+        // 如果新節點類型為"合控"，自動添加一個額度子節點
+        if (result.node.type === '合控') {
+          console.log('new node is 合控, adding child at level:', (result.node.level || 0) + 1);
+
+          // Don't add a child if it would exceed the tree height limit
+          if ((result.node.level || 0) >= 3) {
+            console.warn('不添加子節點，以避免超過樹高度限制');
+            return;
+          }
+
+          // 創建一個額度類型的子節點
+          const childNode: TreeNode = {
+            id: this.treeDataService.generateUniqueId(),
+            name: '預設額度節點',
+            parentId: result.node.id,
+            level: (result.node.level || 0) + 1,
+            locked: false,
+            selected: false,
+            reports: [],
+            type: '額度', // 明確設定為額度類型
+            amount: 0,
+            note: ''
+          };
+
+          // 添加子節點
+          this.treeDataService.addNode(result.node.id, childNode);
+        }
       }
     });
   }
@@ -159,11 +264,27 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
       return;
     }
 
-    if(this.selectedNode.children) {
-      // 確認刪除
-      if (confirm(`確定要刪除 "${this.selectedNode.name}" 及其子節點嗎？`)) {
-        this.treeDataService.deleteNode(this.selectedNode.id);
-      }
+    // 構建確認消息
+    let confirmMessage = `確定要刪除 "${this.selectedNode.name}"`;
+    if (this.selectedNode.children && this.selectedNode.children.length > 0) {
+      confirmMessage += ` 及其 ${this.selectedNode.children.length} 個子節點`;
+    }
+    confirmMessage += "嗎？";
+
+    // 確認刪除
+    if (confirm(confirmMessage)) {
+      // 保存當前被刪除節點的ID，用於後續檢查
+      const deletedNodeId = this.selectedNode.id;
+
+      // 刪除節點
+      this.treeDataService.deleteNode(deletedNodeId);
+
+      // 清空側邊欄資料 - 將選中節點設為null
+      this.treeDataService.selectNode(null);
+
+      // 清空相關連結狀態
+      this.linkedNodes.clear();
+      this.isQueryingLinks = false;
     }
   }
 
@@ -171,13 +292,15 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
   }
 
   editNode(): void {
-    if (!this.selectedNode) return;
+    if (!this.selectedNode) {
+      return;
+    }
 
     const ref = this.dialogService.open(NodeEditDialogComponent, {
       header: '編輯節點',
       width: '400px',
       data: {
-        node: { ...this.selectedNode },
+        node: {...this.selectedNode},
         isNew: false,
         readOnly: this.selectedNode.locked
       }
@@ -197,8 +320,10 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
 
     // 這可能需要更複雜的UI，比如顯示一個對話框讓用戶選擇要關聯的節點
     // 這裡使用簡單對話框示範
-    const targetId = prompt("請輸入要關聯的節點ID：");
-    if (!targetId) return;
+    const targetId = prompt('請輸入要關聯的節點ID：');
+    if (!targetId) {
+      return;
+    }
 
     // 關聯節點
     this.treeDataService.linkNodes(this.selectedNode.id, targetId);
@@ -251,6 +376,9 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
     if (this.subscription) {
       this.subscription.unsubscribe();
     }
+    if (this.dragDropSubscription) {
+      this.dragDropSubscription.unsubscribe();
+    }
   }
 
   private showNodeInfo(node: TreeNode): void {
@@ -269,7 +397,9 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
    * Unlinks the selected node from all its connections
    */
   unlinkNode(): void {
-    if (!this.selectedNode) return;
+    if (!this.selectedNode) {
+      return;
+    }
 
     // Remove the node from the linked nodes set
     this.linkedNodes.delete(this.selectedNode.id);
@@ -291,7 +421,9 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
    * Queries and highlights all nodes linked to the selected node
    */
   queryLinkedNodes(): void {
-    if (!this.selectedNode) return;
+    if (!this.selectedNode) {
+      return;
+    }
     if (this.isQueryingLinks) {
       // Clear all highlights
       this.linkedNodes.clear();
@@ -309,7 +441,9 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
   }
 
   addNode(node: TreeNode): void {
-    if (!this.data) return;
+    if (!this.data) {
+      return;
+    }
 
     if (!this.data.children) {
       this.data.children = [];
@@ -320,7 +454,9 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
   }
 
   updateNode(updatedNode: TreeNode): void {
-    if (!this.data) return;
+    if (!this.data) {
+      return;
+    }
 
     const updateNodeInTree = (node: TreeNode): boolean => {
       if (node.id === updatedNode.id) {

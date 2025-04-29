@@ -88,6 +88,27 @@ export class TreeVisualizationService {
   constructor() { }
 
   /**
+   * 計算樹的高度
+   * 返回從根節點到最深葉節點的路徑長度
+   * 
+   * @param data 樹的數據結構
+   * @returns 樹的高度（最長路徑的節點數）
+   */
+  public getTreeHeight(data: TreeNode | null): number {
+    if (!data) {
+      return 0;
+    }
+
+    // 使用d3.hierarchy創建樹的層次結構
+    const root = d3.hierarchy(data, d => d.children);
+    
+    // 獲取樹的高度（root.height 是最長路徑上的邊數，加1得到節點數）
+    const treeHeight = root.height + 1;
+    
+    return treeHeight;
+  }
+
+  /**
    * 初始化樹狀結構視圖
    * @param data 樹數據
    * @returns 初始化後的DOM元素

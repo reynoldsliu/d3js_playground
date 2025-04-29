@@ -1,11 +1,13 @@
-import { Component, OnInit } from '@angular/core';
-import { DynamicDialogRef, DynamicDialogConfig } from 'primeng/dynamicdialog';
-import { TreeNode } from '../../interfaces/interfaces';
+import {Component, OnInit} from '@angular/core';
+import {DynamicDialogRef, DynamicDialogConfig} from 'primeng/dynamicdialog';
+import {TreeNode} from '../../interfaces/interfaces';
+import {DropdownChangeEvent} from 'primeng/dropdown';
+import {TreeVisualizationService} from '../../services/tree-visualization-service';
 
 /**
  * NodeEditDialogComponent is a dialog component for creating and editing tree nodes.
  * It provides a form interface for users to input node details including type, name, and amount.
- * 
+ *
  * @Component
  * @selector app-node-edit-dialog
  * @templateUrl ./node-edit-dialog.component.html
@@ -40,8 +42,8 @@ export class NodeEditDialogComponent implements OnInit {
    * @type {Array<{label: string, value: string}>}
    */
   nodeTypes = [
-    { label: '額度', value: '額度' },
-    { label: '合控', value: '合控' }
+    {label: '額度', value: '額度' as const},
+    {label: '合控', value: '合控' as const},
   ];
 
   /**
@@ -50,15 +52,28 @@ export class NodeEditDialogComponent implements OnInit {
    * @param {DynamicDialogConfig} config - Configuration object containing dialog data
    */
   constructor(
+    private treeVisualizationService: TreeVisualizationService,
     public ref: DynamicDialogRef,
     public config: DynamicDialogConfig
   ) {
-    this.node = { ...config.data.node };
+    this.node = {...config.data.node};
     this.isNew = config.data.isNew;
     this.readOnly = config.data.readOnly;
   }
 
+  /**
+   * Initialize component with default values
+   * Ensures required properties are available
+   */
   ngOnInit(): void {
+    // 確保必要的屬性已初始化，但不設置默認類型讓用戶選擇
+    if (this.node.amount === undefined) {
+      this.node.amount = 0;
+    }
+
+    if (!this.node.note) {
+      this.node.note = '';
+    }
   }
 
   /**
@@ -66,10 +81,10 @@ export class NodeEditDialogComponent implements OnInit {
    * @returns {boolean} True if all required fields are filled, false otherwise
    */
   isValid(): boolean {
-    return !!this.node.name && 
-           !!this.node.type && 
-           this.node.amount !== undefined && 
-           this.node.amount !== null;
+    return !!this.node.name &&
+      !!this.node.type &&
+      this.node.amount !== undefined &&
+      this.node.amount !== null;
   }
 
   /**
@@ -77,6 +92,24 @@ export class NodeEditDialogComponent implements OnInit {
    * Closes the dialog with the updated node data if the form is valid
    */
   onConfirm(): void {
+    // Get the current tree height
+    const treeHeight = this.treeVisualizationService.getCurrentTreeHeight();
+    console.log('Current tree height:', treeHeight);
+
+    // If this is a new node and we're adding to a deep tree
+    if (this.isNew && this.node.parentId) {
+      // Get parent level from node
+      const parentLevel = this.node.level ? (this.node.level - 1) : 0;
+      console.log('Parent level:', parentLevel);
+
+      // If parent is already at level 3 (which would make this node level 4)
+      // or if adding to this parent would exceed total height of 4
+      if (parentLevel >= 4 || treeHeight > 4) {
+        alert('資料層數超過限制 無法新增子節點');
+        return;
+      }
+    }
+
     if (this.isValid()) {
       this.ref.close({
         action: 'confirm',
@@ -94,4 +127,4 @@ export class NodeEditDialogComponent implements OnInit {
       action: 'cancel'
     });
   }
-} 
+}

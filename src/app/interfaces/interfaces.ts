@@ -10,7 +10,7 @@ export interface TreeNode {
   reports?: string[];       // 報告內容
   relatedTo?: string[];    // 相關節點
   position?: string;        // 職位
-  type?: '額度' | '合控';   // 節點類型
+  type?: string;   // 節點類型
   amount?: number;          // 金額
   note?: string;           // 備註內容
   linkedNodes?: string[];
