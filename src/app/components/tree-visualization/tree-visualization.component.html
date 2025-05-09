@@ -109,7 +109,7 @@
         type="button"
         label="編輯節點"
         (click)="editNode()"
-        [disabled]="!selectedNode"
+        [disabled]="!selectedNode || selectedNode.level === 0"
         class="p-button-secondary">
       </button>
       <button pButton

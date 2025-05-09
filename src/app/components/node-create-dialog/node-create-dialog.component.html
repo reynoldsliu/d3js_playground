@@ -16,6 +16,7 @@
       <td>
         <input type="checkbox"
                name="treeNodeSelection"
+               [disabled]="isCheckboxesDisabled(rowNode.node)"
                [checked]="isNodeSelected(rowNode)"
                (click)="selectSingleNode(rowNode, $event)" />
       </td>

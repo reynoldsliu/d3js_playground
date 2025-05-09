@@ -1,5 +1,6 @@
 import {Component, EventEmitter, OnInit, Output} from '@angular/core';
 import {TreeNode} from '../../interfaces/interfaces';
+import {TreeDataService} from '../../services/tree-data-service';
 
 @Component({
   selector: 'app-node-create-dialog',
@@ -17,7 +18,6 @@ export class NodeCreateDialogComponent implements OnInit {
   sourceData = [{
     id: 'unique-1',
     name: '額度D',
-    position: '額度',
     parentId: '1',
     level: 1,
     locked: false,
@@ -31,7 +31,6 @@ export class NodeCreateDialogComponent implements OnInit {
     {
       id: 'unique-2',
       name: '合控C',
-      position: '合控',
       parentId: '1',
       level: 1,
       locked: false,
@@ -44,7 +43,6 @@ export class NodeCreateDialogComponent implements OnInit {
         {
           id: 'unique-3',
           name: '額度E',
-          position: '額度',
           parentId: '3',
           level: 2,
           locked: false,
@@ -64,7 +62,7 @@ export class NodeCreateDialogComponent implements OnInit {
     {field: 'amount', header: '金額', align: 'right'},
   ];
 
-  constructor() {
+  constructor(private treeDataService: TreeDataService) {
   }
 
   ngOnInit(): void {
@@ -81,6 +79,7 @@ export class NodeCreateDialogComponent implements OnInit {
 // Select a single node
   selectSingleNode(rowNode: any, event: MouseEvent): void {
     event.stopPropagation();
+    this.isCheckboxesDisabled(rowNode);
     this.selectedNodeKey = rowNode.node.id;
 
     // Emit the selected node to parent component
@@ -106,13 +105,24 @@ export class NodeCreateDialogComponent implements OnInit {
     const nodes: any[] = [];
 
     const traverseNodes = (node: any) => {
-      if(node){
+      if (node) {
         nodes.push(node);
       }
     };
 
     this.sourceData.forEach(node => traverseNodes(node));
     return nodes;
+  }
+
+  isCheckboxesDisabled(rowNode:TreeNode): boolean {
+    const selectedNode = this.treeDataService.getSelectedNode();
+    const ids = this.treeDataService.getChildrenIds(selectedNode?.id);
+    console.log(ids);
+    console.log(rowNode.id);
+    if(ids.includes(rowNode.id)){
+      return true;
+    }
+    return false;
   }
 
 }

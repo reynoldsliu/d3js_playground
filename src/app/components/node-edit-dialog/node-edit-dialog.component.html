@@ -4,15 +4,19 @@
     <div class="p-field">
       <!-- 在模板中 -->
       <label for="name">節點類型</label>
-      <p-dropdown
-        name="type"
-        [options]="nodeTypes"
-        [(ngModel)]="node.type"
-        optionLabel="label"
-        [optionValue]="'value'"
-        placeholder="選擇類型"
-        [disabled]="readOnly">
-      </p-dropdown>
+      <input pInputText
+             id="type"
+             [(ngModel)]="node.type"
+             [disabled]="true">
+<!--      <p-dropdown-->
+<!--        name="type"-->
+<!--        [options]="nodeTypes"-->
+<!--        [(ngModel)]="node.type"-->
+<!--        optionLabel="label"-->
+<!--        [optionValue]="'value'"-->
+<!--        placeholder="選擇類型"-->
+<!--        [disabled]="readOnly">-->
+<!--      </p-dropdown>-->
     </div>
 
     <div class="p-field">
@@ -21,6 +25,16 @@
              id="name"
              [(ngModel)]="node.name"
              [name]="node.name"
+             [required]="true"
+             [disabled]="config.data.readOnly">
+    </div>
+
+    <div class="p-field">
+      <!-- 在模板中 -->
+      <label for="name">幣別</label>
+      <input pInputText
+             id="currency"
+             [(ngModel)]="node.currency"
              [required]="true"
              [disabled]="config.data.readOnly">
     </div>

@@ -5,6 +5,7 @@ import {Selection} from 'd3-selection';
 import {HierarchyNode} from 'd3-hierarchy';
 import {BehaviorSubject, Subject} from 'rxjs';
 import {TreeDataService} from './tree-data-service';
+import {TreeLayout} from 'd3';
 
 @Injectable()
 export class TreeVisualizationService {
@@ -19,8 +20,8 @@ export class TreeVisualizationService {
 
   public svgWidth = 1200;
   public svgHeight = 800;
-  public nodeWidth = 200;
-  public nodeHeight = 60;
+  public nodeWidth = 220;
+  public nodeHeight = 120;
 
   // 拖放相關屬性
   private draggedNode: any = null;
@@ -145,20 +146,11 @@ export class TreeVisualizationService {
     return {
       id: '1',
       name: '三雅投資股份有限公司',
-      position: '合控',
       level: 0,
-      locked: false,
-      selected: false,
-      parentId: null,
-      reports: [],
-      type: '合控',
-      amount: 100000000, // 1億
-      note: '備註',
       children: [
         {
           id: '2',
           name: '額度A',
-          position: '額度',
           parentId: '1',
           level: 1,
           locked: false,
@@ -166,12 +158,13 @@ export class TreeVisualizationService {
           reports: [],
           type: '額度',
           amount: 500000000, // 5億
+          state: '註銷',
+          note: '此額度已註銷，不可編輯。',
           children: []
         },
         {
           id: '3',
           name: '合控A',
-          position: '合控',
           parentId: '1',
           level: 1,
           locked: false,
@@ -179,11 +172,11 @@ export class TreeVisualizationService {
           reports: [],
           type: '合控',
           amount: 150000000, // 1.5億
+          state: '新增',
           children: [
             {
               id: '5',
               name: '額度B',
-              position: '額度',
               parentId: '3',
               level: 2,
               locked: false,
@@ -191,6 +184,7 @@ export class TreeVisualizationService {
               reports: [],
               type: '額度',
               amount: 200000000, // 2億
+              state: '新增',
               children: []
             }
           ]
@@ -198,7 +192,6 @@ export class TreeVisualizationService {
         {
           id: '4',
           name: '合控B',
-          position: '合控',
           parentId: '1',
           level: 1,
           locked: false,
@@ -206,10 +199,10 @@ export class TreeVisualizationService {
           reports: [],
           type: '合控',
           amount: 200000000, // 2億
+          state: '既有',
           children: [{
             id: '6',
             name: '額度C',
-            position: '額度',
             parentId: '1',
             level: 1,
             locked: false,
@@ -217,6 +210,7 @@ export class TreeVisualizationService {
             reports: [],
             type: '額度',
             amount: 500000000, // 5億
+            state: '既有',
             children: []
           }],
           note: '備註',
@@ -234,8 +228,21 @@ export class TreeVisualizationService {
     }
 
     const root = d3.hierarchy(data) as HierarchyNode<unknown>;
-    const tree = d3.tree().nodeSize([this.nodeWidth * 1.5, this.nodeHeight * 3]);
-    tree(root);
+    // const tree = d3.tree().nodeSize([this.nodeWidth * 1.5, this.nodeHeight * 3]);
+    let tree;
+    if(data){
+
+      tree = this.calculateOptimalNodeSpacing(data);
+      tree(root);
+    }
+
+    // Hide children initially if collapsed property is true
+    root.descendants().forEach((d: any) => {
+      if (d.data.collapsed && d.children) {
+        d._children = d.children;
+        d.children = null;
+      }
+    });
 
     // 初始化tooltip
     const tooltip = this.initializeTooltip();
@@ -247,7 +254,9 @@ export class TreeVisualizationService {
       .attr('height', this.svgHeight)
       .attr('viewBox', [0, 0, this.svgWidth, this.svgHeight])
       .attr('style', 'max-width: 100%; height: auto;')
-      .on('click', () => {this.treeDataService.selectNode(null)});
+      .on('click', () => {
+        this.treeDataService.selectNode(null);
+      });
 
     // Create a group with margin
     this.g = this.svg.append('g')
@@ -295,11 +304,12 @@ export class TreeVisualizationService {
       .on('click', (event: any, d: d3.HierarchyNode<unknown>) => this.handleNodeClick(event, d))
       .attr('draggable', true)
       .attr('cursor', 'move')  // 改變滑鼠游標為移動指示器
-      .call(d3.drag()
-        .on('start', (event, d) => this.dragStarted(event, d))
-        .on('drag', (event, d) => this.dragging(event, d))
-        .on('end', (event, d) => this.dragEnded(event, d))
-      );
+    // .call(d3.drag()
+    //   .on('start', (event, d) => this.dragStarted(event, d))
+    //   .on('drag', (event, d) => this.dragging(event, d))
+    //   .on('end', (event, d) => this.dragEnded(event, d))
+    // ) TODO disable drag-drop
+    ;
 
     // Add rectangles
     this.nodes.append('rect')
@@ -355,34 +365,125 @@ export class TreeVisualizationService {
         return this.styles.node.default.strokeWidth;
       });
 
+    // Replace the existing fold/unfold control code with this:
+
+// Add fold/unfold control
+    this.nodes.append('g')
+      .attr('class', 'fold-control')
+      .attr('transform', (d: any) => {
+        // Position the control at the left edge of the node rectangle
+        return `translate(${-this.nodeWidth / 2 - 15}, 0)`;
+      })
+      .style('display', (d: any) => d.children || d._children ? 'block' : 'none')
+      .style('cursor', 'pointer')
+      .on('click', (event: any, d: any) => {
+        event.stopPropagation();
+        this.toggleNode(d);
+      })
+      .append('circle')
+      .attr('r', 8)
+      .style('fill', '#f8f8f8')
+      .style('stroke', '#ccc')
+      .style('stroke-width', '1px');
+
+// Add + or - symbol to fold/unfold control
+    this.nodes.select('.fold-control')
+      .append('text')
+      .attr('dy', '0.3em')
+      .attr('text-anchor', 'middle')
+      .style('font-size', '14px')
+      .style('fill', '#666')
+      .text((d: any) => d.children ? '−' : '+');
+
+    // Add circles for nodes
+    this.nodes.append('circle')
+      .attr('class', 'node-circle')
+      .attr('r', 1e-6)
+      .style('fill', (d: any) => d._children ? 'lightsteelblue' : '#fff')
+      .style('stroke', 'steelblue')
+      .style('stroke-width', '1.5px');
+
+    // Add labels for nodes
+    this.nodes.append('text')
+      .attr('class', 'node-label')
+      .attr('dy', '.35em')
+      .attr('x', 10)
+      .text((d: any) => d.data.name)
+      .style('fill-opacity', 1e-6);
+
     // Add name text
     this.nodes.append('text')
       .attr('dy', '-0.5em')
       .attr('text-anchor', 'middle')
       .attr('class', 'node-name')
-      .text((d: { data: TreeNode; }) => (d.data as TreeNode).name)
+      .text((d: { data: TreeNode; }) => {
+        const node = d.data as TreeNode;
+        if (node.level === 0) {
+          return '提案名稱: ' + (d.data as TreeNode).name;
+        }
+        return '額度編號: ' + (d.data as TreeNode).name;
+      })
       .style('fill', this.styles.text.title.color)
       .style('font-size', this.styles.text.title.size)
       .style('font-weight', 'bold');
 
-    // Add position text
+    // Add type text
     this.nodes.append('text')
       .attr('dy', '1em')
       .attr('text-anchor', 'middle')
-      .attr('class', 'node-position')
-      .text((d: { data: TreeNode; }) => (d.data as TreeNode).position || '')
+      .attr('class', 'node-type')
+      .text((d: { data: TreeNode; }) => {
+        const node = d.data as TreeNode;
+        if (node.type) {
+          return '額度種類: ' + ((d.data as TreeNode).type || '');
+        }
+        return '';
+      })
+      .style('fill', this.styles.text.info.color)
+      .style('font-size', this.styles.text.info.size);
+
+    // Add currency text
+    this.nodes.append('text')
+      .attr('dy', '2.2em')
+      .attr('text-anchor', 'middle')
+      .attr('class', 'node-currency')
+      .text((d: { data: TreeNode; }) => {
+        const node = d.data as TreeNode;
+        if (node.level !== 0) {
+          if (!((d.data as TreeNode).currency)) {
+            d.data.currency = '新台幣';
+          }
+          return '幣別: ' + ((d.data as TreeNode).currency || '');
+        }
+        return '';
+      })
       .style('fill', this.styles.text.info.color)
       .style('font-size', this.styles.text.info.size);
 
     // Add percentages text
     this.nodes.append('text')
-      .attr('dy', '2.2em')
+      .attr('dy', '3.4em')
       .attr('text-anchor', 'middle')
       .attr('class', 'node-percentages')
       .text((d: { data: TreeNode; }) => {
         const node = d.data as TreeNode;
         if (node.type && node.amount) {
-          return `${node.type}: ${node.amount.toLocaleString()}元`;
+          return `金額: ${node.amount.toLocaleString()}元`;
+        }
+        return '';
+      })
+      .style('fill', this.styles.text.info.color)
+      .style('font-size', this.styles.text.info.size);
+
+    // Add state text
+    this.nodes.append('text')
+      .attr('dy', '4.6em')
+      .attr('text-anchor', 'middle')
+      .attr('class', 'node-currency')
+      .text((d: { data: TreeNode; }) => {
+        const node = d.data as TreeNode;
+        if (node.state) {
+          return '帳務狀態: ' + ((d.data as TreeNode).state || '');
         }
         return '';
       })
@@ -467,6 +568,75 @@ export class TreeVisualizationService {
     });
 
     return this.svg.node();
+  }
+
+  // Add this method to your TreeVisualizationService class
+  private calculateOptimalNodeSpacing(data: TreeNode): TreeLayout<unknown> {
+    // Get hierarchical representation of the tree
+    const root = d3.hierarchy(data);
+
+    // Find the maximum number of nodes at any level
+    const nodesByLevel: { [level: number]: number } = {};
+
+    // Count nodes at each level
+    root.each(node => {
+      const level = node.depth;
+      nodesByLevel[level] = (nodesByLevel[level] || 0) + 1;
+    });
+
+    // Find the level with the most nodes
+    const maxNodesInLevel = Math.max(...Object.values(nodesByLevel));
+
+    // Calculate the optimal spacing based on the most populated level
+    // Use the available width divided by the maximum number of nodes
+    const availableWidth = this.svgWidth * 0.8; // Use 80% of SVG width to leave margins
+    const minNodeSpacing = this.nodeWidth * 1.2; // Minimum space between nodes
+
+    // Calculate base node spacing
+    let horizontalSpacing = Math.max(
+      availableWidth / Math.max(maxNodesInLevel - 1, 1),
+      minNodeSpacing
+    );
+
+    // Apply the calculated spacing to the tree layout
+    const treeLayout = d3.tree<unknown>()
+      .nodeSize([horizontalSpacing, this.nodeHeight * 2.5])
+      .separation((a, b) => {
+        // Adjust separation based on whether nodes have the same parent
+        return a.parent === b.parent ? 1 : 1.2;
+      });
+
+    // Store the calculated spacing for future reference
+    // this.horizontalNodeSpacing = horizontalSpacing;
+
+    // Return the configured tree layout
+    return treeLayout;
+  }
+
+
+  private toggleNode(d: any) {
+    if (d.children) {
+      // Collapse
+      d._children = d.children;
+      d.children = null;
+      d.data.collapsed = true;
+    } else {
+      // Expand
+      d.children = d._children;
+      d._children = null;
+      d.data.collapsed = false;
+    }
+
+    // Update the tree
+    // this.initializeTree(d);
+    const currentData = this.treeDataService.treeDataSubject.getValue();
+    if (currentData) {
+      const newData = this.treeDataService.deepCloneTree(currentData);
+      this.treeDataService.treeDataSubject.next(newData);
+
+    }
+
+
   }
 
   setupZoom(): void {
@@ -602,9 +772,9 @@ export class TreeVisualizationService {
       .style('stroke', this.styles.node.selected.stroke)
       .style('stroke-width', this.styles.node.selected.strokeWidth);
 
-    // 高亮相似节点
-    const similarNodes = this.treeDataService.findNodesByName(nodeName);
-    this.highlightSimilarNodes(similarNodes, selectedNodeId);
+    // 高亮相似节点 TODO
+    // const similarNodes = this.treeDataService.findNodesByName(nodeName);
+    // this.highlightSimilarNodes(similarNodes, selectedNodeId);
   }
 
   // 修改 highlightSimilarNodes 方法
@@ -839,14 +1009,6 @@ export class TreeVisualizationService {
           .style('font-size', '14px')
           .style('font-weight', 'bold');
 
-        if (nodeData.position) {
-          nodeGroup.append('text')
-            .attr('dy', '1em')
-            .attr('text-anchor', 'middle')
-            .text(nodeData.position)
-            .style('fill', textColor)
-            .style('font-size', '12px');
-        }
       } else {
         // Child nodes - show ID, type and amount
         nodeGroup.append('text')

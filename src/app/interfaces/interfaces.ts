@@ -5,14 +5,16 @@ export interface TreeNode {
   parentId?: string | null;        // 父節點 ID
   level?: number;           // 層級
   children?: TreeNode[];    // 子節點
+  _children?: TreeNode[]; // Collapsed nodes storage
+  collapsed?: boolean;
   locked?: boolean;         // 是否鎖定
   selected?: boolean;       // 是否被選中
   reports?: string[];       // 報告內容
   relatedTo?: string[];    // 相關節點
-  position?: string;        // 職位
   type?: string;   // 節點類型
   currency?: string, // 幣別
   amount?: number;          // 金額
+  state?: string;
   note?: string;           // 備註內容
   linkedNodes?: string[];
 }

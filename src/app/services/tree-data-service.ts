@@ -5,7 +5,7 @@ import {v4 as uuidv4} from 'uuid';
 
 @Injectable({providedIn: 'root'})
 export class TreeDataService {
-  private treeDataSubject = new BehaviorSubject<TreeNode | null>(null);
+  treeDataSubject = new BehaviorSubject<TreeNode | null>(null);
   treeData$ = this.treeDataSubject.asObservable();
 
   // 當前選中節點的 BehaviorSubject
@@ -93,7 +93,6 @@ export class TreeDataService {
 
   // 新增節點
   addNode(parentId: string | null, newNode: TreeNode): void {
-    // TODO: 實現新增節點邏輯
     const currentData = this.treeDataSubject.getValue();
     if (!currentData) {
       return;
@@ -197,6 +196,13 @@ export class TreeDataService {
 
     const parentNode = this.getNodeByIdRecursion(newData, targetNode.parentId);
     if (parentNode && parentNode.children) {
+      // 暫存被移除的節點
+      const deletedNode = parentNode.children.filter(node => node.id === nodeId);
+      // 將被移除的節點新增回提案底下
+      if(!newData.children){
+        newData.children = [];
+      }
+      newData.children.push(...deletedNode);
       // 從父節點的子節點列表中移除該節點
       parentNode.children = parentNode.children.filter(node => node.id !== nodeId);
 
@@ -310,7 +316,7 @@ export class TreeDataService {
 // 移動節點 - 根據模式決定操作
   // 移動節點 - 根據模式決定操作
   moveNode(sourceId: string, targetId: string, mode: 'reorder' | 'nest' = 'nest'): void {
-    console.log('moveNode called:', { sourceId, targetId, mode });
+    console.log('moveNode called:', {sourceId, targetId, mode});
 
     if (mode === 'reorder') {
       console.log('Using reorderNode');
@@ -324,7 +330,7 @@ export class TreeDataService {
 // 重新排序節點
   // 完成 reorderNode 方法
   private reorderNode(sourceId: string, targetId: string): void {
-    console.log('reorderNode:', { sourceId, targetId });
+    console.log('reorderNode:', {sourceId, targetId});
 
     const currentData = this.treeDataSubject.getValue();
     if (!currentData) {
@@ -380,7 +386,7 @@ export class TreeDataService {
       return;
     }
 
-    console.log('Swapping nodes at indices:', { sourceIndex, targetIndex });
+    console.log('Swapping nodes at indices:', {sourceIndex, targetIndex});
 
     // 交換位置
     [parentNode.children[sourceIndex], parentNode.children[targetIndex]] =
@@ -394,7 +400,7 @@ export class TreeDataService {
 // 嵌套節點
   // 完成 nestNode 方法
   private nestNode(sourceId: string, targetId: string): void {
-    console.log('nestNode:', { sourceId, targetId });
+    console.log('nestNode:', {sourceId, targetId});
 
     const currentData = this.treeDataSubject.getValue();
     if (!currentData) {
@@ -437,7 +443,7 @@ export class TreeDataService {
     if (sourceNode.parentId) {
       const oldParent = this.getNodeByIdRecursion(newData, sourceNode.parentId);
       if (oldParent && oldParent.children) {
-      console.log('removing origin node from its parent');
+        console.log('removing origin node from its parent');
         oldParent.children = oldParent.children.filter(child => child.id !== sourceId);
         console.log(oldParent.children);
         console.log(sourceId);
@@ -478,7 +484,9 @@ export class TreeDataService {
 
 // 檢查節點是否是另一個節點的後代
   isDescendant(node: TreeNode, possibleDescendantId: string): boolean {
-    if (!node.children) return false;
+    if (!node.children) {
+      return false;
+    }
 
     return node.children.some(child =>
       child.id === possibleDescendantId || this.isDescendant(child, possibleDescendantId)
@@ -487,7 +495,9 @@ export class TreeDataService {
 
 // 更新節點及其所有子節點的層級
   private updateChildrenLevels(node: TreeNode): void {
-    if (!node.children) return;
+    if (!node.children) {
+      return;
+    }
 
     node.children.forEach(child => {
       child.level = (node.level || 0) + 1;
@@ -565,7 +575,7 @@ export class TreeDataService {
   }
 
 // 深拷貝樹
-  private deepCloneTree(node: TreeNode): TreeNode {
+  deepCloneTree(node: TreeNode): TreeNode {
     const clone = {...node};
     if (node.children) {
       clone.children = node.children.map(child => this.deepCloneTree(child));
@@ -588,5 +598,25 @@ export class TreeDataService {
 
   getTreeData(): TreeNode | null {
     return this.treeDataSubject.getValue();
+  }
+
+  getChildrenIds(nodeId?: string): string[] {
+    if(!nodeId){
+      return [];
+    }
+    const root = this.treeDataSubject.getValue();
+    if (!root) {
+      return [];
+    }
+    const node = this.getNodeByIdRecursion(root, nodeId);
+    const children = node?.children;
+    if (!children) {
+      return [];
+    }
+    const result: string[] = [nodeId];
+    children.map(child => child.id).forEach(childId => {
+      result.push(childId);
+    });
+    return result;
   }
 }

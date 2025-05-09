@@ -3,6 +3,7 @@ import {DynamicDialogRef, DynamicDialogConfig} from 'primeng/dynamicdialog';
 import {TreeNode} from '../../interfaces/interfaces';
 import {DropdownChangeEvent} from 'primeng/dropdown';
 import {TreeVisualizationService} from '../../services/tree-visualization-service';
+import {TreeDataService} from '../../services/tree-data-service';
 
 /**
  * NodeEditDialogComponent is a dialog component for creating and editing tree nodes.
@@ -55,6 +56,7 @@ export class NodeEditDialogComponent implements OnInit {
    */
   constructor(
     private treeVisualizationService: TreeVisualizationService,
+    private treeDataService: TreeDataService,
     public ref: DynamicDialogRef,
     public config: DynamicDialogConfig
   ) {
@@ -110,6 +112,11 @@ export class NodeEditDialogComponent implements OnInit {
         alert('資料層數超過限制 無法新增子節點');
         return;
       }
+    }
+
+    // 實作 移動節點邏輯 節點若是被新增 則從提案底下被移除
+    if(this.isNew){
+      this.treeDataService.deleteNode(this.node.id);
     }
 
     if (this.isValid()) {
