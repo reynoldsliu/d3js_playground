@@ -1,0 +1,34 @@
+<p-treeTable
+  [value]="sourceData"
+  [columns]="columns"
+  [lazy]="true"
+  selectionMode="single">
+  <ng-template pTemplate="header" let-columns>
+    <tr>
+      <th style="width: 3rem"></th>
+      <th *ngFor="let col of columns">
+        {{ col.header }}
+      </th>
+    </tr>
+  </ng-template>
+  <ng-template pTemplate="body" let-rowNode let-rowData="rowData" let-columns="columns">
+    <tr>
+      <td>
+        <input type="checkbox"
+               name="treeNodeSelection"
+               [checked]="isNodeSelected(rowNode)"
+               (click)="selectSingleNode(rowNode, $event)" />
+      </td>
+      <ng-container *ngFor="let col of columns" [ngSwitch]="col.field">
+        <td *ngSwitchCase="'id'"
+            [ngStyle]="{'text-align': col.align || 'left', 'white-space': 'nowrap', 'overflow': 'hidden', 'text-overflow': 'ellipsis'}">
+          <p-treeTableToggler [rowNode]="rowNode"></p-treeTableToggler>
+          {{ rowNode.node?.[col.field] }}
+        </td>
+        <td *ngSwitchDefault
+            [ngStyle]="{'text-align': col.align || 'left', 'white-space': 'nowrap', 'overflow': 'hidden', 'text-overflow': 'ellipsis'}">
+          {{ rowNode.node?.[col.field] }}</td>
+      </ng-container>
+    </tr>
+  </ng-template>
+</p-treeTable>

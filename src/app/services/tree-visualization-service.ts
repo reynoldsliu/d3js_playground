@@ -145,20 +145,20 @@ export class TreeVisualizationService {
     return {
       id: '1',
       name: '三雅投資股份有限公司',
-      position: '總公司',
+      position: '合控',
       level: 0,
       locked: false,
       selected: false,
       parentId: null,
       reports: [],
       type: '合控',
-      amount: 1000000000, // 10億
+      amount: 100000000, // 1億
       note: '備註',
       children: [
         {
           id: '2',
           name: '額度A',
-          position: '主要額度',
+          position: '額度',
           parentId: '1',
           level: 1,
           locked: false,
@@ -171,19 +171,19 @@ export class TreeVisualizationService {
         {
           id: '3',
           name: '合控A',
-          position: '主要合控',
+          position: '合控',
           parentId: '1',
           level: 1,
           locked: false,
           selected: false,
           reports: [],
           type: '合控',
-          amount: 300000000, // 3億
+          amount: 150000000, // 1.5億
           children: [
             {
               id: '5',
               name: '額度B',
-              position: '子額度',
+              position: '額度',
               parentId: '3',
               level: 2,
               locked: false,
@@ -198,7 +198,7 @@ export class TreeVisualizationService {
         {
           id: '4',
           name: '合控B',
-          position: '次要合控',
+          position: '合控',
           parentId: '1',
           level: 1,
           locked: false,
@@ -208,8 +208,8 @@ export class TreeVisualizationService {
           amount: 200000000, // 2億
           children: [{
             id: '6',
-            name: '額度A',
-            position: '主要額度',
+            name: '額度C',
+            position: '額度',
             parentId: '1',
             level: 1,
             locked: false,
@@ -246,7 +246,8 @@ export class TreeVisualizationService {
       .attr('width', this.svgWidth)
       .attr('height', this.svgHeight)
       .attr('viewBox', [0, 0, this.svgWidth, this.svgHeight])
-      .attr('style', 'max-width: 100%; height: auto;');
+      .attr('style', 'max-width: 100%; height: auto;')
+      .on('click', () => {this.treeDataService.selectNode(null)});
 
     // Create a group with margin
     this.g = this.svg.append('g')
@@ -1199,14 +1200,5 @@ export class TreeVisualizationService {
 
     return false;
   }
-
-
-// 移動節點的方法
-  private moveNode(nodeId: string, newParentId: string): void {
-    // 通知數據服務移動節點
-    // 這需要在 TreeDataService 中實現
-    this.treeDataService.moveNode(nodeId, newParentId);
-  }
-
 
 }

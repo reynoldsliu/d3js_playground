@@ -63,24 +63,22 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
       }
     );
 
-    // 訂閱拖放完成事件
-    this.dragDropSubscription = this.treeVisualizationService.dragDropCompleted$.subscribe(
-      ({sourceId, targetId, mode}) => {
-        console.log('Tree component received drag-drop event:', { sourceId, targetId, mode });
-        this.treeDataService.moveNode(sourceId, targetId, mode);
-      }
-    );
-
-    // 監聽拖放模式變化
-
-      this.form.get('dragMode')!.valueChanges.subscribe(mode => {
-        this.dragMode = mode;
-        this.treeVisualizationService.setDragMode(mode);
-      });
-
+    // // 訂閱拖放完成事件
+    // this.dragDropSubscription = this.treeVisualizationService.dragDropCompleted$.subscribe(
+    //   ({sourceId, targetId, mode}) => {
+    //     console.log('Tree component received drag-drop event:', { sourceId, targetId, mode });
+    //     this.treeDataService.moveNode(sourceId, targetId, mode);
+    //   }
+    // );
 
     // 初始設置
     this.treeVisualizationService.setDragMode(this.dragMode);
+    // 監聽拖放模式變化
+
+    this.form.get('dragMode')!.valueChanges.subscribe(mode => {
+      this.dragMode = mode;
+      this.treeVisualizationService.setDragMode(mode);
+    });
 
     // 載入數據 (只在第一次初始化時)
     this.loadTreeData();
@@ -158,6 +156,15 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
     this.treeVisualizationService.resetZoom();
   }
 
+  reset() {
+    const treeRoot = this.treeDataService.getTreeData();
+    if (treeRoot) {
+      this.treeDataService.selectNode(treeRoot.id);
+    }
+
+    this.resetZoom();
+  }
+
 // 添加一個標誌來防止無限循環
   private isRefreshing = false;
 
@@ -204,7 +211,7 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
 
     const ref = this.dialogService.open(NodeEditDialogComponent, {
       header: '新增節點',
-      width: '400px',
+      width: '650px',
       data: {
         node: newNode,
         isNew: true,
@@ -229,32 +236,32 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
         this.treeDataService.addNode(this.selectedNode?.id || null, result.node);
 
         // 如果新節點類型為"合控"，自動添加一個額度子節點
-        if (result.node.type === '合控') {
-          console.log('new node is 合控, adding child at level:', (result.node.level || 0) + 1);
-
-          // Don't add a child if it would exceed the tree height limit
-          if ((result.node.level || 0) >= 3) {
-            console.warn('不添加子節點，以避免超過樹高度限制');
-            return;
-          }
-
-          // 創建一個額度類型的子節點
-          const childNode: TreeNode = {
-            id: this.treeDataService.generateUniqueId(),
-            name: '預設額度節點',
-            parentId: result.node.id,
-            level: (result.node.level || 0) + 1,
-            locked: false,
-            selected: false,
-            reports: [],
-            type: '額度', // 明確設定為額度類型
-            amount: 0,
-            note: ''
-          };
-
-          // 添加子節點
-          this.treeDataService.addNode(result.node.id, childNode);
-        }
+        // if (result.node.type === '合控') {
+        //   console.log('new node is 合控, adding child at level:', (result.node.level || 0) + 1);
+        //
+        //   // Don't add a child if it would exceed the tree height limit
+        //   if ((result.node.level || 0) >= 3) {
+        //     console.warn('不添加子節點，以避免超過樹高度限制');
+        //     return;
+        //   }
+        //
+        //   // 創建一個額度類型的子節點
+        //   const childNode: TreeNode = {
+        //     id: this.treeDataService.generateUniqueId(),
+        //     name: '預設額度節點',
+        //     parentId: result.node.id,
+        //     level: (result.node.level || 0) + 1,
+        //     locked: false,
+        //     selected: false,
+        //     reports: [],
+        //     type: '額度', // 明確設定為額度類型
+        //     amount: 0,
+        //     note: ''
+        //   };
+        //
+        //   // 添加子節點
+        //   this.treeDataService.addNode(result.node.id, childNode);
+        // }
       }
     });
   }
@@ -269,7 +276,7 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
     if (this.selectedNode.children && this.selectedNode.children.length > 0) {
       confirmMessage += ` 及其 ${this.selectedNode.children.length} 個子節點`;
     }
-    confirmMessage += "嗎？";
+    confirmMessage += '嗎？';
 
     // 確認刪除
     if (confirm(confirmMessage)) {
@@ -381,18 +388,6 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
     }
   }
 
-  private showNodeInfo(node: TreeNode): void {
-    const ref = this.dialogService.open(NodeEditDialogComponent, {
-      header: '節點資訊',
-      width: '400px',
-      data: {
-        node: node,
-        isNew: false,
-        readOnly: true
-      }
-    });
-  }
-
   /**
    * Unlinks the selected node from all its connections
    */
@@ -440,42 +435,4 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
     this.renderTree(this.data);
   }
 
-  addNode(node: TreeNode): void {
-    if (!this.data) {
-      return;
-    }
-
-    if (!this.data.children) {
-      this.data.children = [];
-    }
-
-    this.data.children.push(node);
-    this.renderTree(this.data);
-  }
-
-  updateNode(updatedNode: TreeNode): void {
-    if (!this.data) {
-      return;
-    }
-
-    const updateNodeInTree = (node: TreeNode): boolean => {
-      if (node.id === updatedNode.id) {
-        Object.assign(node, updatedNode);
-        return true;
-      }
-
-      if (node.children) {
-        for (const child of node.children) {
-          if (updateNodeInTree(child)) {
-            return true;
-          }
-        }
-      }
-
-      return false;
-    };
-
-    updateNodeInTree(this.data);
-    this.renderTree(this.data);
-  }
 }

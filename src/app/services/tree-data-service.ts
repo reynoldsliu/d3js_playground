@@ -189,12 +189,6 @@ export class TreeDataService {
       return;
     }
 
-    // 檢查是否有子節點
-    // if (targetNode.children && targetNode.children.length > 0) {
-    //   console.warn('無法刪除帶有子節點的節點');
-    //   return;
-    // }
-
     // 確保有父節點ID
     if (!targetNode.parentId) {
       console.warn('節點缺少父節點ID');
@@ -443,8 +437,10 @@ export class TreeDataService {
     if (sourceNode.parentId) {
       const oldParent = this.getNodeByIdRecursion(newData, sourceNode.parentId);
       if (oldParent && oldParent.children) {
+      console.log('removing origin node from its parent');
         oldParent.children = oldParent.children.filter(child => child.id !== sourceId);
-
+        console.log(oldParent.children);
+        console.log(sourceId);
         // 如果父節點的子節點數組為空，可以刪除該屬性
         if (oldParent.children.length === 0) {
           delete oldParent.children;

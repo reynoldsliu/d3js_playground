@@ -11,6 +11,7 @@ export interface TreeNode {
   relatedTo?: string[];    // 相關節點
   position?: string;        // 職位
   type?: string;   // 節點類型
+  currency?: string, // 幣別
   amount?: number;          // 金額
   note?: string;           // 備註內容
   linkedNodes?: string[];

@@ -14,22 +14,26 @@ import { InputTextareaModule } from 'primeng/inputtextarea';
 
 // Components
 import { TreeVisualizationComponent } from '../../components/tree-visualization/tree-visualization.component';
-import { NodeEditDialogComponent } from '../../components/node-edit-dialog/node-edit-dialog.component';
 
 // Services
 import { TreeVisualizationService } from '../../services/tree-visualization-service';
 import { TreeDataService } from '../../services/tree-data-service';
+import {NodeCreateDialogComponent} from '../../components/node-create-dialog/node-create-dialog.component';
+import {TreeTableModule} from 'primeng/treetable';
+import {NodeEditDialogComponent} from '../../components/node-edit-dialog/node-edit-dialog.component';
+import {TableModule} from 'primeng/table';
 
 /**
  * TreeVisualizationModule is responsible for managing all components, services,
  * and dependencies related to the tree visualization functionality.
- * 
+ *
  * @NgModule Defines the module with its imports, declarations, exports, and providers.
  */
 @NgModule({
   declarations: [
     TreeVisualizationComponent,
-    NodeEditDialogComponent
+    NodeEditDialogComponent,
+    NodeCreateDialogComponent
   ],
   imports: [
     CommonModule,
@@ -42,7 +46,9 @@ import { TreeDataService } from '../../services/tree-data-service';
     ButtonModule,
     DropdownModule,
     InputNumberModule,
-    InputTextareaModule
+    InputTextareaModule,
+    TreeTableModule,
+    TableModule
   ],
   exports: [
     TreeVisualizationComponent
@@ -52,4 +58,4 @@ import { TreeDataService } from '../../services/tree-data-service';
     TreeDataService
   ]
 })
-export class TreeVisualizationModule { } 
+export class TreeVisualizationModule { }

@@ -46,6 +46,8 @@ export class NodeEditDialogComponent implements OnInit {
     {label: '合控', value: '合控' as const},
   ];
 
+  selectedNode: TreeNode | null = null;
+
   /**
    * Constructs a new NodeEditDialogComponent
    * @param {DynamicDialogRef} ref - Reference to the dialog
@@ -127,4 +129,17 @@ export class NodeEditDialogComponent implements OnInit {
       action: 'cancel'
     });
   }
+
+  // Handle the node selection event from child component
+  onNodeSelected(node: any): void {
+    this.selectedNode = node;
+    if (node){
+      this.node = node;
+    }
+    console.log('Selected node in parent:', this.selectedNode);
+    console.log(this.selectedNode===null);
+
+    // Now you can use this.selectedNode for whatever you need
+  }
+
 }

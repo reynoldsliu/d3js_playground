@@ -15,7 +15,6 @@ import { InputNumberModule } from 'primeng/inputnumber';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import {TreeVisualizationService} from './services/tree-visualization-service';
-import {CompanyBlockComponent} from './components/company-block/company-block.component';
 import {TreeDataService} from './services/tree-data-service';
 
 // 導入樹狀視覺化模組
@@ -27,8 +26,7 @@ import { TreeVisualizationModule } from './modules/tree-visualization/tree-visua
  */
 @NgModule({
   declarations: [
-    AppComponent,
-    CompanyBlockComponent
+    AppComponent
   ],
   imports: [
     BrowserModule,
