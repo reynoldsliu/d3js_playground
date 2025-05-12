@@ -367,15 +367,14 @@ export class TreeVisualizationService {
 
     // Replace the existing fold/unfold control code with this:
 
-// Add fold/unfold control
+// In your fold/unfold control creation code
     this.nodes.append('g')
       .attr('class', 'fold-control')
-      .attr('transform', (d: any) => {
-        // Position the control at the left edge of the node rectangle
-        return `translate(${-this.nodeWidth / 2 - 15}, 0)`;
-      })
+      .attr('transform', (d: any) => `translate(${-this.nodeWidth / 2 - 15}, 0)`)
       .style('display', (d: any) => d.children || d._children ? 'block' : 'none')
-      .style('cursor', 'pointer')
+      .style('pointer-events', 'all') // Keep it interactive
+      .style('visibility', 'visible')
+      .attr('data-spacing-ignore', 'true') // Add a custom attribute for identification
       .on('click', (event: any, d: any) => {
         event.stopPropagation();
         this.toggleNode(d);
@@ -572,6 +571,8 @@ export class TreeVisualizationService {
 
   // Add this method to your TreeVisualizationService class
   private calculateOptimalNodeSpacing(data: TreeNode): TreeLayout<unknown> {
+    // First, temporarily hide fold controls for spacing calculations
+
     // Get hierarchical representation of the tree
     const root = d3.hierarchy(data);
 
@@ -603,7 +604,8 @@ export class TreeVisualizationService {
       .nodeSize([horizontalSpacing, this.nodeHeight * 2.5])
       .separation((a, b) => {
         // Adjust separation based on whether nodes have the same parent
-        return a.parent === b.parent ? 1 : 1.2;
+        return a.parent === b.parent ? 1 : 1;
+        // return a.parent === b.parent ? 1 : 1.2; TODO
       });
 
     // Store the calculated spacing for future reference

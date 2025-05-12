@@ -210,7 +210,7 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
     };
 
     const ref = this.dialogService.open(NodeEditDialogComponent, {
-      header: '新增節點',
+      header: '新增關聯',
       width: '650px',
       data: {
         node: newNode,

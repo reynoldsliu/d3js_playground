@@ -15,7 +15,7 @@ export class NodeCreateDialogComponent implements OnInit {
   selectedNodeKeys: Set<string> = new Set();
 
 
-  sourceData = [{
+  sourceData: TreeNode[] | undefined = [{
     id: 'unique-1',
     name: '額度D',
     parentId: '1',
@@ -66,6 +66,9 @@ export class NodeCreateDialogComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    if (this.treeDataService.getTreeData()?.children) {
+      this.sourceData = this.treeDataService.getTreeData()?.children;
+    }
   }
 
   // Track the currently selected node
@@ -110,16 +113,18 @@ export class NodeCreateDialogComponent implements OnInit {
       }
     };
 
-    this.sourceData.forEach(node => traverseNodes(node));
+    if (this.sourceData) {
+      this.sourceData.forEach(node => traverseNodes(node));
+    }
     return nodes;
   }
 
-  isCheckboxesDisabled(rowNode:TreeNode): boolean {
+  isCheckboxesDisabled(rowNode: TreeNode): boolean {
     const selectedNode = this.treeDataService.getSelectedNode();
     const ids = this.treeDataService.getChildrenIds(selectedNode?.id);
     console.log(ids);
     console.log(rowNode.id);
-    if(ids.includes(rowNode.id)){
+    if (ids.includes(rowNode.id)) {
       return true;
     }
     return false;

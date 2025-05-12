@@ -91,7 +91,7 @@ export class TreeDataService {
     this.treeDataSubject.next(newData);
   }
 
-  // 新增節點
+  // 新增關聯
   addNode(parentId: string | null, newNode: TreeNode): void {
     const currentData = this.treeDataSubject.getValue();
     if (!currentData) {
