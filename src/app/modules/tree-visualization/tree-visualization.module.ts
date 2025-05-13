@@ -23,6 +23,7 @@ import {TreeTableModule} from 'primeng/treetable';
 import {NodeEditDialogComponent} from '../../components/node-edit-dialog/node-edit-dialog.component';
 import {TableModule} from 'primeng/table';
 import {TreeDragDropService} from './services/tree-drag-drop-service';
+import {TreeZoomService} from './services/tree-zoom-service';
 
 /**
  * TreeVisualizationModule is responsible for managing all components, services,
@@ -57,7 +58,8 @@ import {TreeDragDropService} from './services/tree-drag-drop-service';
   providers: [
     TreeVisualizationService,
     TreeDataService,
-    TreeDragDropService
+    TreeDragDropService,
+    TreeZoomService
   ]
 })
 export class TreeVisualizationModule { }

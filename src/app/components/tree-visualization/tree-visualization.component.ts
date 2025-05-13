@@ -10,6 +10,7 @@ import {NodeEditDialogComponent} from '../node-edit-dialog/node-edit-dialog.comp
 import {TooltipModule} from 'primeng/tooltip';
 import {FormBuilder, FormGroup} from '@angular/forms';
 import {TreeDragDropService} from '../../modules/tree-visualization/services/tree-drag-drop-service';
+import {TreeZoomService} from '../../modules/tree-visualization/services/tree-zoom-service';
 
 @Component({
   selector: 'app-tree-visualization',
@@ -43,6 +44,7 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
               private treeVisualizationService: TreeVisualizationService,
               private treeDataService: TreeDataService,
               private treeDragDropService: TreeDragDropService,
+              private treeZoomService: TreeZoomService,
               private dialogService: DialogService) {
     this.form = this.fb.group({
       dragMode: ['nest'] // 默認值
@@ -132,7 +134,8 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
       this.treeContainer.nativeElement.appendChild(initNode);
 
       // 設置縮放功能
-      this.treeVisualizationService.setupZoom();
+      // this.treeVisualizationService.setupZoom();
+      this.setUpZoom();
     } finally {
       // 確保標誌被重置
       this.isRefreshing = false;
@@ -147,15 +150,26 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
   }
 
   zoomIn() {
-    this.treeVisualizationService.zoomIn();
+    // this.treeVisualizationService.zoomIn();
+    this.treeZoomService.zoomIn();
   }
 
   zoomOut() {
-    this.treeVisualizationService.zoomOut();
+    // this.treeVisualizationService.zoomOut();
+    this.treeZoomService.zoomOut();
   }
 
-  resetZoom() {
-    this.treeVisualizationService.resetZoom();
+  setUpZoom() {
+    this.treeZoomService.setupZoom(
+      this.treeVisualizationService.svg,
+      this.treeVisualizationService.g
+    );
+    this.treeZoomService.resetZoom(
+      this.treeVisualizationService.nodeWidth,
+      this.treeVisualizationService.nodeHeight,
+      this.treeVisualizationService.svgWidth,
+      this.treeVisualizationService.svgHeight,
+    );
   }
 
   reset() {
@@ -164,7 +178,7 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
       this.treeDataService.selectNode(treeRoot.id);
     }
 
-    this.resetZoom();
+    this.setUpZoom();
   }
 
 // 添加一個標誌來防止無限循環

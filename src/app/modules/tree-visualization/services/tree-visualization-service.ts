@@ -1,12 +1,11 @@
 import {ElementRef, Injectable} from '@angular/core';
 import * as d3 from 'd3';
 import {TreeNode} from '../interfaces/interfaces';
-import {Selection} from 'd3-selection';
 import {HierarchyNode} from 'd3-hierarchy';
-import {BehaviorSubject, Subject} from 'rxjs';
 import {TreeDataService} from './tree-data-service';
 import {TreeLayout} from 'd3';
 import {TreeDragDropService} from './tree-drag-drop-service';
+import {TreeZoomService} from './tree-zoom-service';
 
 @Injectable()
 export class TreeVisualizationService {
@@ -16,8 +15,6 @@ export class TreeVisualizationService {
   public links: any;
   public rects: any;
   public g: any;
-
-  private zoom: any;
 
   public svgWidth = 1200;
   public svgHeight = 800;
@@ -84,7 +81,8 @@ export class TreeVisualizationService {
   };
 
   constructor(private treeDataService: TreeDataService,
-              private treeDragDropService: TreeDragDropService,) {
+              private treeDragDropService: TreeDragDropService,
+              private treeZoomService: TreeZoomService,) {
   }
 
   /**
@@ -659,72 +657,6 @@ export class TreeVisualizationService {
 
   }
 
-  setupZoom(): void {
-    this.zoom = d3.zoom()
-      .scaleExtent([0.3, 2]) // 调整缩放范围
-      .on('zoom', (event) => {
-        this.g.attr('transform', event.transform);
-        this.treeDataService.updateTreeState({
-          zoom: event.transform.k,
-          pan: {
-            x: event.transform.x,
-            y: event.transform.y
-          }
-        });
-      });
-
-    // 将缩放行为应用到SVG
-    this.svg.call(this.zoom);
-
-    // 初始化时自动居中
-    this.centerGraph();
-  }
-
-  resetZoom(): void {
-    if (!this.svg || !this.g) {
-      return;
-    }
-
-    // 获取所有节点的边界
-    const bounds = this.g.node().getBBox();
-
-    // 考虑节点的实际大小和边距
-    const padding = 50;
-    const effectiveWidth = bounds.width + this.nodeWidth + padding * 2;
-    const effectiveHeight = bounds.height + this.nodeHeight + padding * 2;
-
-    // 计算适当的缩放比例
-    const scale = Math.min(
-      (this.svgWidth - padding * 2) / effectiveWidth,
-      (this.svgHeight - padding * 2) / effectiveHeight,
-      1.5
-    );
-
-    // 计算居中位置，考虑节点的实际大小
-    const translateX = (this.svgWidth - effectiveWidth * scale) / 2 - (bounds.x - padding) * scale;
-    const translateY = (this.svgHeight - effectiveHeight * scale) / 2 - (bounds.y - padding) * scale;
-
-    const transform = d3.zoomIdentity
-      .translate(translateX, translateY)
-      .scale(scale);
-
-    this.svg.transition()
-      .duration(750)
-      .call(this.zoom.transform, transform);
-  }
-
-  zoomIn(): void {
-    this.svg.transition()
-      .duration(300)
-      .call(this.zoom.scaleBy, 1.1);
-  }
-
-  zoomOut(): void {
-    this.svg.transition()
-      .duration(300)
-      .call(this.zoom.scaleBy, 0.9);
-  }
-
   // TODO 處理節點點擊事件
   private handleNodeClick(event: any, d: d3.HierarchyNode<unknown>) {
     event.stopPropagation();
@@ -740,7 +672,7 @@ export class TreeVisualizationService {
       this.updateNodeStyles(nodeId, nodeData.name);
 
       // 恢复之前的变换状态，防止画面移动
-      this.svg.call(this.zoom.transform, currentTransform);
+      this.svg.call(this.treeZoomService.zoom.transform, currentTransform);
     }
   }
 
@@ -847,10 +779,10 @@ export class TreeVisualizationService {
     this.initializeTree(data);
 
     // 重新设置缩放行为
-    this.setupZoom();
+    this.treeZoomService.setupZoom(this.svg, this.g);
 
     // 恢复之前的变换状态
-    this.svg.call(this.zoom.transform, currentTransform);
+    this.svg.call(this.treeZoomService.zoom.transform, currentTransform);
 
     // 如果有选中的节点，恢复其选中状态
     const selectedNodeId = this.treeDataService.getSelectedNodeId();
@@ -985,7 +917,7 @@ export class TreeVisualizationService {
     // 应用新的变换，使用过渡动画
     this.svg.transition()
       .duration(750)
-      .call(this.zoom.transform, newTransform);
+      .call(this.treeZoomService.zoom.transform, newTransform);
   }
 
   private addNodeElements(selection: any) {
@@ -1096,7 +1028,7 @@ export class TreeVisualizationService {
 
     this.svg.transition()
       .duration(750)
-      .call(this.zoom.transform, transform);
+      .call(this.treeZoomService.zoom.transform, transform);
   }
 
 
