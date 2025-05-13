@@ -14,8 +14,8 @@ import { InputNumberModule } from 'primeng/inputnumber';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
-import {TreeVisualizationService} from './services/tree-visualization-service';
-import {TreeDataService} from './services/tree-data-service';
+import {TreeVisualizationService} from './modules/tree-visualization/services/tree-visualization-service';
+import {TreeDataService} from './modules/tree-visualization/services/tree-data-service';
 
 // 導入樹狀視覺化模組
 import { TreeVisualizationModule } from './modules/tree-visualization/tree-visualization.module';

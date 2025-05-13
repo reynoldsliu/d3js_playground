@@ -1,6 +1,6 @@
 import {Component, EventEmitter, OnInit, Output} from '@angular/core';
-import {TreeNode} from '../../interfaces/interfaces';
-import {TreeDataService} from '../../services/tree-data-service';
+import {TreeNode} from '../../modules/tree-visualization/interfaces/interfaces';
+import {TreeDataService} from '../../modules/tree-visualization/services/tree-data-service';
 
 @Component({
   selector: 'app-node-create-dialog',

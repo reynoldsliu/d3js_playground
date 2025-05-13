@@ -1,14 +1,15 @@
 import {Component, OnInit, ElementRef, ViewChild, AfterViewInit, OnDestroy, HostListener} from '@angular/core';
 import {Subscription} from 'rxjs';
 import * as d3 from 'd3';
-import {TreeNode} from '../../interfaces/interfaces';
-import {TreeVisualizationService} from '../../services/tree-visualization-service';
+import {TreeNode} from '../../modules/tree-visualization/interfaces/interfaces';
+import {TreeVisualizationService} from '../../modules/tree-visualization/services/tree-visualization-service';
 import {range} from 'd3';
-import {TreeDataService} from '../../services/tree-data-service';
+import {TreeDataService} from '../../modules/tree-visualization/services/tree-data-service';
 import {DialogService} from 'primeng/dynamicdialog';
 import {NodeEditDialogComponent} from '../node-edit-dialog/node-edit-dialog.component';
 import {TooltipModule} from 'primeng/tooltip';
 import {FormBuilder, FormGroup} from '@angular/forms';
+import {TreeDragDropService} from '../../modules/tree-visualization/services/tree-drag-drop-service';
 
 @Component({
   selector: 'app-tree-visualization',
@@ -41,6 +42,7 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
   constructor(private fb: FormBuilder,
               private treeVisualizationService: TreeVisualizationService,
               private treeDataService: TreeDataService,
+              private treeDragDropService: TreeDragDropService,
               private dialogService: DialogService) {
     this.form = this.fb.group({
       dragMode: ['nest'] // 默認值
@@ -72,12 +74,12 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
     // );
 
     // 初始設置
-    this.treeVisualizationService.setDragMode(this.dragMode);
+    this.treeDragDropService.setDragMode(this.dragMode);
     // 監聽拖放模式變化
 
     this.form.get('dragMode')!.valueChanges.subscribe(mode => {
       this.dragMode = mode;
-      this.treeVisualizationService.setDragMode(mode);
+      this.treeDragDropService.setDragMode(mode);
     });
 
     // 載入數據 (只在第一次初始化時)
@@ -96,7 +98,7 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
         }
       });
     // 訂閱拖放完成事件
-    this.dragDropSubscription = this.treeVisualizationService.dragDropCompleted$.subscribe(
+    this.dragDropSubscription = this.treeDragDropService.dragDropCompleted$.subscribe(
       ({sourceId, targetId}) => {
         // 調用數據服務移動節點
         this.treeDataService.moveNode(sourceId, targetId);

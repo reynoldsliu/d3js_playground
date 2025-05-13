@@ -563,5 +563,33 @@ export class TreeDataService {
     }
   }
 
+  // 根據ID查找節點數據
+  findNodeById(nodeId: string): TreeNode | null {
+    // 從當前樹數據中查找
+    const treeData = this.getTreeData();
+    if (!treeData) {
+      return null;
+    }
+
+    const findNode = (node: TreeNode): TreeNode | null => {
+      if (node.id === nodeId) {
+        return node;
+      }
+
+      if (node.children) {
+        for (const child of node.children) {
+          const found = findNode(child);
+          if (found) {
+            return found;
+          }
+        }
+      }
+
+      return null;
+    };
+
+    return findNode(treeData);
+  }
+
 
 }

@@ -1,9 +1,9 @@
 import {Component, OnInit} from '@angular/core';
 import {DynamicDialogRef, DynamicDialogConfig} from 'primeng/dynamicdialog';
-import {TreeNode} from '../../interfaces/interfaces';
+import {TreeNode} from '../../modules/tree-visualization/interfaces/interfaces';
 import {DropdownChangeEvent} from 'primeng/dropdown';
-import {TreeVisualizationService} from '../../services/tree-visualization-service';
-import {TreeDataService} from '../../services/tree-data-service';
+import {TreeVisualizationService} from '../../modules/tree-visualization/services/tree-visualization-service';
+import {TreeDataService} from '../../modules/tree-visualization/services/tree-data-service';
 
 /**
  * NodeEditDialogComponent is a dialog component for creating and editing tree nodes.

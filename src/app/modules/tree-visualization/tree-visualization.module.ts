@@ -16,12 +16,13 @@ import { InputTextareaModule } from 'primeng/inputtextarea';
 import { TreeVisualizationComponent } from '../../components/tree-visualization/tree-visualization.component';
 
 // Services
-import { TreeVisualizationService } from '../../services/tree-visualization-service';
-import { TreeDataService } from '../../services/tree-data-service';
+import { TreeVisualizationService } from './services/tree-visualization-service';
+import { TreeDataService } from './services/tree-data-service';
 import {NodeCreateDialogComponent} from '../../components/node-create-dialog/node-create-dialog.component';
 import {TreeTableModule} from 'primeng/treetable';
 import {NodeEditDialogComponent} from '../../components/node-edit-dialog/node-edit-dialog.component';
 import {TableModule} from 'primeng/table';
+import {TreeDragDropService} from './services/tree-drag-drop-service';
 
 /**
  * TreeVisualizationModule is responsible for managing all components, services,
@@ -55,7 +56,8 @@ import {TableModule} from 'primeng/table';
   ],
   providers: [
     TreeVisualizationService,
-    TreeDataService
+    TreeDataService,
+    TreeDragDropService
   ]
 })
 export class TreeVisualizationModule { }
