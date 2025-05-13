@@ -220,20 +220,23 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
     });
 
     ref.onClose.subscribe((result: any) => {
+      console.log(result);
       if (result?.action === 'confirm') {
-        console.log('Adding node at level:', newNode.level);
 
         // Only proceed if adding won't exceed tree height limit
-        const willExceedLimit =
-          (newNode.level || 0) >= 3 ||
-          (result.node.type === '合控' && (newNode.level || 0) >= 2);
+        this.treeDataService.getHeight(result.node).then(addedNodeHeight => {
+          const forecastHeight = (this.treeDataService.getSelectedNode()?.level ?? 1) + addedNodeHeight;
+          if (forecastHeight >= 4) {
+            alert('資料層數超過限制 無法新增子節點: from tree-visualization.component.ts');
+            return;
+          }
+          // 實作 移動節點邏輯 節點若是被新增 則從提案底下被移除
+          else {
+            this.treeDataService.deleteNode(result.node.id);
+            this.treeDataService.addNode(this.selectedNode?.id || null, result.node);
 
-        if (willExceedLimit && currentTreeHeight >= 4) {
-          alert('資料層數超過限制 無法新增子節點');
-          return;
-        }
-
-        this.treeDataService.addNode(this.selectedNode?.id || null, result.node);
+          }
+        });
 
         // 如果新節點類型為"合控"，自動添加一個額度子節點
         // if (result.node.type === '合控') {
@@ -267,6 +270,7 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
   }
 
   deleteNode(): void {
+    console.log('deleteNode called:');
     if (!this.selectedNode || !this.selectedNode.id) {
       return;
     }

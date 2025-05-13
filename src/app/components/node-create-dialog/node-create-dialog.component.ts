@@ -14,6 +14,8 @@ export class NodeCreateDialogComponent implements OnInit {
   selectedNode?: TreeNode;
   selectedNodeKeys: Set<string> = new Set();
 
+  // TODO 新增節點之來源 需檢查額度為葉節點原則
+
 
   sourceData: TreeNode[] | undefined = [{
     id: 'unique-1',
@@ -57,7 +59,7 @@ export class NodeCreateDialogComponent implements OnInit {
     }] as TreeNode[];
 
   columns = [
-    {field: 'id', header: '序號', align: 'right'},
+    {field: 'name', header: '序號', align: 'right'},
     {field: 'currency', header: '幣別', align: 'right'},
     {field: 'amount', header: '金額', align: 'right'},
   ];
@@ -76,6 +78,7 @@ export class NodeCreateDialogComponent implements OnInit {
 
 // Check if a node is selected
   isNodeSelected(rowNode: any): boolean {
+    console.log(rowNode);
     return this.selectedNodeKey === rowNode.node.id;
   }
 
@@ -124,7 +127,11 @@ export class NodeCreateDialogComponent implements OnInit {
     const ids = this.treeDataService.getChildrenIds(selectedNode?.id);
     console.log(ids);
     console.log(rowNode.id);
-    if (ids.includes(rowNode.id)) {
+
+    // 若為選取節點之子節點 或 其不為treetable顯示最上層節點 或 其為被選起節點之直系祖先 則不可選取
+    if (ids.includes(rowNode.id) || !this.sourceData?.includes(rowNode)
+      || this.treeDataService.isDescendant(rowNode, selectedNode?.id)
+    ) {
       return true;
     }
     return false;

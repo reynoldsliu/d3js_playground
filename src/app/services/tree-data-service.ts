@@ -93,6 +93,7 @@ export class TreeDataService {
 
   // 新增關聯
   addNode(parentId: string | null, newNode: TreeNode): void {
+    console.log('addNode called:', {parentId, newNode});
     const currentData = this.treeDataSubject.getValue();
     if (!currentData) {
       return;
@@ -199,7 +200,7 @@ export class TreeDataService {
       // 暫存被移除的節點
       const deletedNode = parentNode.children.filter(node => node.id === nodeId);
       // 將被移除的節點新增回提案底下
-      if(!newData.children){
+      if (!newData.children) {
         newData.children = [];
       }
       newData.children.push(...deletedNode);
@@ -483,8 +484,8 @@ export class TreeDataService {
   }
 
 // 檢查節點是否是另一個節點的後代
-  isDescendant(node: TreeNode, possibleDescendantId: string): boolean {
-    if (!node.children) {
+  isDescendant(node: TreeNode | null, possibleDescendantId: string | undefined): boolean {
+    if (!node || !node.children || !possibleDescendantId) {
       return false;
     }
 
@@ -601,7 +602,7 @@ export class TreeDataService {
   }
 
   getChildrenIds(nodeId?: string): string[] {
-    if(!nodeId){
+    if (!nodeId) {
       return [];
     }
     const root = this.treeDataSubject.getValue();
@@ -619,4 +620,28 @@ export class TreeDataService {
     });
     return result;
   }
+
+  async getHeight(node: TreeNode | null): Promise<number> {
+    return this.gH(node);
+  }
+
+  gH(node: TreeNode | null): number {
+    if (!node) {
+      return 0;
+    }
+    if (node.children) {
+      let highest = 0;
+      for (const child of node.children) {
+        const childHeight = this.gH(child);
+        if (childHeight > highest) {
+          highest = childHeight;
+        }
+      }
+      return highest + 1;
+    } else {
+      return 1;
+    }
+  }
+
+
 }

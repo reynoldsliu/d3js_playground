@@ -13,7 +13,7 @@
   </ng-template>
   <ng-template pTemplate="body" let-rowNode let-rowData="rowData" let-columns="columns">
     <tr>
-      <td>
+      <td *ngIf="rowNode">
         <input type="checkbox"
                name="treeNodeSelection"
                [disabled]="isCheckboxesDisabled(rowNode.node)"
@@ -21,7 +21,7 @@
                (click)="selectSingleNode(rowNode, $event)" />
       </td>
       <ng-container *ngFor="let col of columns" [ngSwitch]="col.field">
-        <td *ngSwitchCase="'id'"
+        <td *ngSwitchCase="'name'"
             [ngStyle]="{'text-align': col.align || 'left', 'white-space': 'nowrap', 'overflow': 'hidden', 'text-overflow': 'ellipsis'}">
           <p-treeTableToggler [rowNode]="rowNode"></p-treeTableToggler>
           {{ rowNode.node?.[col.field] }}

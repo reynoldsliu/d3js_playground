@@ -150,7 +150,7 @@ export class TreeVisualizationService {
       children: [
         {
           id: '2',
-          name: '額度A',
+          name: 'P250001',
           parentId: '1',
           level: 1,
           locked: false,
@@ -158,13 +158,12 @@ export class TreeVisualizationService {
           reports: [],
           type: '額度',
           amount: 500000000, // 5億
-          state: '註銷',
-          note: '此額度已註銷，不可編輯。',
+          state: '新增',
           children: []
         },
         {
           id: '3',
-          name: '合控A',
+          name: 'P250002',
           parentId: '1',
           level: 1,
           locked: false,
@@ -172,11 +171,10 @@ export class TreeVisualizationService {
           reports: [],
           type: '合控',
           amount: 150000000, // 1.5億
-          state: '新增',
           children: [
             {
               id: '5',
-              name: '額度B',
+              name: 'P250003',
               parentId: '3',
               level: 2,
               locked: false,
@@ -191,7 +189,7 @@ export class TreeVisualizationService {
         },
         {
           id: '4',
-          name: '合控B',
+          name: 'P250004',
           parentId: '1',
           level: 1,
           locked: false,
@@ -199,12 +197,11 @@ export class TreeVisualizationService {
           reports: [],
           type: '合控',
           amount: 200000000, // 2億
-          state: '既有',
           children: [{
             id: '6',
-            name: '額度C',
+            name: 'P250005',
             parentId: '1',
-            level: 1,
+            level: 2,
             locked: false,
             selected: false,
             reports: [],
@@ -212,8 +209,42 @@ export class TreeVisualizationService {
             amount: 500000000, // 5億
             state: '既有',
             children: []
+          }, {
+            id: '7',
+            name: 'P250006',
+            parentId: '4',
+            level: 2,
+            locked: false,
+            selected: false,
+            reports: [],
+            type: '合控',
+            amount: 200000000, // 2億
+            children: [{
+              id: '8',
+              name: 'P250007',
+              parentId: '7',
+              level: 3,
+              locked: false,
+              selected: false,
+              reports: [],
+              type: '額度',
+              amount: 500000000, // 5億
+              state: '既有',
+              children: []
+            }, {
+              id: '9',
+              name: 'P250008',
+              parentId: '7',
+              level: 3,
+              locked: false,
+              selected: false,
+              reports: [],
+              type: '額度',
+              amount: 500000000, // 5億
+              state: '既有',
+              children: []
+            }],
           }],
-          note: '備註',
         }
       ]
     } as TreeNode;
@@ -230,7 +261,7 @@ export class TreeVisualizationService {
     const root = d3.hierarchy(data) as HierarchyNode<unknown>;
     // const tree = d3.tree().nodeSize([this.nodeWidth * 1.5, this.nodeHeight * 3]);
     let tree;
-    if(data){
+    if (data) {
 
       tree = this.calculateOptimalNodeSpacing(data);
       tree(root);
@@ -370,7 +401,7 @@ export class TreeVisualizationService {
 // In your fold/unfold control creation code
     this.nodes.append('g')
       .attr('class', 'fold-control')
-      .attr('transform', (d: any) => `translate(${-this.nodeWidth / 2 - 15}, 0)`)
+      .attr('transform', (d: any) => `translate(0, ${this.nodeHeight / 2 + 15})`)
       .style('display', (d: any) => d.children || d._children ? 'block' : 'none')
       .style('pointer-events', 'all') // Keep it interactive
       .style('visibility', 'visible')
@@ -405,14 +436,14 @@ export class TreeVisualizationService {
     // Add labels for nodes
     this.nodes.append('text')
       .attr('class', 'node-label')
-      .attr('dy', '.35em')
+      .attr('dy', '.15em')
       .attr('x', 10)
       .text((d: any) => d.data.name)
       .style('fill-opacity', 1e-6);
 
     // Add name text
     this.nodes.append('text')
-      .attr('dy', '-0.5em')
+      .attr('dy', '-1.5em')
       .attr('text-anchor', 'middle')
       .attr('class', 'node-name')
       .text((d: { data: TreeNode; }) => {

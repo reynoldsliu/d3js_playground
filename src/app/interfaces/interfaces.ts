@@ -12,11 +12,12 @@ export interface TreeNode {
   reports?: string[];       // 報告內容
   relatedTo?: string[];    // 相關節點
   type?: string;   // 節點類型
-  currency?: string, // 幣別
+  currency?: string; // 幣別
   amount?: number;          // 金額
   state?: string;
   note?: string;           // 備註內容
   linkedNodes?: string[];
+
 }
 
 // 樹狀操作類型

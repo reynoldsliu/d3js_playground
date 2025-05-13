@@ -96,29 +96,6 @@ export class NodeEditDialogComponent implements OnInit {
    * Closes the dialog with the updated node data if the form is valid
    */
   onConfirm(): void {
-    // Get the current tree height
-    const treeHeight = this.treeVisualizationService.getCurrentTreeHeight();
-    console.log('Current tree height:', treeHeight);
-
-    // If this is a new node and we're adding to a deep tree
-    if (this.isNew && this.node.parentId) {
-      // Get parent level from node
-      const parentLevel = this.node.level ? (this.node.level - 1) : 0;
-      console.log('Parent level:', parentLevel);
-
-      // If parent is already at level 3 (which would make this node level 4)
-      // or if adding to this parent would exceed total height of 4
-      if (parentLevel >= 4 || treeHeight > 4) {
-        alert('資料層數超過限制 無法新增子節點');
-        return;
-      }
-    }
-
-    // 實作 移動節點邏輯 節點若是被新增 則從提案底下被移除
-    if(this.isNew){
-      this.treeDataService.deleteNode(this.node.id);
-    }
-
     if (this.isValid()) {
       this.ref.close({
         action: 'confirm',
@@ -140,11 +117,11 @@ export class NodeEditDialogComponent implements OnInit {
   // Handle the node selection event from child component
   onNodeSelected(node: any): void {
     this.selectedNode = node;
-    if (node){
+    if (node) {
       this.node = node;
     }
     console.log('Selected node in parent:', this.selectedNode);
-    console.log(this.selectedNode===null);
+    console.log(this.selectedNode === null);
 
     // Now you can use this.selectedNode for whatever you need
   }

@@ -7,10 +7,10 @@
       <button (click)="zoomOut()" title="縮小">
         <i class="fa fa-search-minus"></i> 縮小
       </button>
+      <button (click)="reset()" title="重置視圖">
+        <i class="fa fa-expand"></i> 重置
+      </button>
       <!--      TODO demo disabled-->
-      <!--      <button (click)="reset()" title="重置視圖">-->
-      <!--        <i class="fa fa-expand"></i> 重置-->
-      <!--      </button>-->
       <!--       在控制面板中添加 -->
       <!--      <div class="drag-mode-selector">-->
       <!--        <label class="mode-option">-->
@@ -104,14 +104,14 @@
               type="button"
               label="新增關聯"
               (click)="createNode()"
-              [disabled]="!selectedNode || selectedNode.level === 0"
+              [disabled]="!selectedNode || selectedNode.level === 0 || selectedNode.type ==='額度'"
               class="p-button-primary">
       </button>
       <button pButton
               type="button"
               label="編輯節點"
               (click)="editNode()"
-              [disabled]="!selectedNode || selectedNode.level === 0"
+              [disabled]="!selectedNode || selectedNode.level === 0 || selectedNode.state === '註銷'"
               class="p-button-secondary">
       </button>
       <button pButton
