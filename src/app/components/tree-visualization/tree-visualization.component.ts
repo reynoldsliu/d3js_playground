@@ -224,7 +224,7 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
       if (result?.action === 'confirm') {
 
         // Only proceed if adding won't exceed tree height limit
-        this.treeDataService.getHeight(result.node).then(addedNodeHeight => {
+        this.treeDataService.getHeightAsync(result.node).then(addedNodeHeight => {
           const forecastHeight = (this.treeDataService.getSelectedNode()?.level ?? 1) + addedNodeHeight;
           if (forecastHeight >= 4) {
             alert('資料層數超過限制 無法新增子節點: from tree-visualization.component.ts');
@@ -237,34 +237,6 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
 
           }
         });
-
-        // 如果新節點類型為"合控"，自動添加一個額度子節點
-        // if (result.node.type === '合控') {
-        //   console.log('new node is 合控, adding child at level:', (result.node.level || 0) + 1);
-        //
-        //   // Don't add a child if it would exceed the tree height limit
-        //   if ((result.node.level || 0) >= 3) {
-        //     console.warn('不添加子節點，以避免超過樹高度限制');
-        //     return;
-        //   }
-        //
-        //   // 創建一個額度類型的子節點
-        //   const childNode: TreeNode = {
-        //     id: this.treeDataService.generateUniqueId(),
-        //     name: '預設額度節點',
-        //     parentId: result.node.id,
-        //     level: (result.node.level || 0) + 1,
-        //     locked: false,
-        //     selected: false,
-        //     reports: [],
-        //     type: '額度', // 明確設定為額度類型
-        //     amount: 0,
-        //     note: ''
-        //   };
-        //
-        //   // 添加子節點
-        //   this.treeDataService.addNode(result.node.id, childNode);
-        // }
       }
     });
   }
@@ -299,9 +271,6 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
     }
   }
 
-  selectedNodes(): void {
-  }
-
   editNode(): void {
     if (!this.selectedNode) {
       return;
@@ -322,22 +291,6 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
         this.treeDataService.updateNode(this.selectedNode!.id, result.node);
       }
     });
-  }
-
-  linkNode(): void {
-    if (!this.selectedNode || !this.selectedNode.id) {
-      return;
-    }
-
-    // 這可能需要更複雜的UI，比如顯示一個對話框讓用戶選擇要關聯的節點
-    // 這裡使用簡單對話框示範
-    const targetId = prompt('請輸入要關聯的節點ID：');
-    if (!targetId) {
-      return;
-    }
-
-    // 關聯節點
-    this.treeDataService.linkNodes(this.selectedNode.id, targetId);
   }
 
   toggleLock(): void {

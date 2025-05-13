@@ -875,7 +875,7 @@ export class TreeVisualizationService {
     }
   }
 
-// 輔助方法：高亮特定節點
+// 輔助方法：突出顯示特定節點
   highlightNode(nodeId: string, className: string): void {
     d3.select(`#node-${nodeId}`).classed(className, true);
 
@@ -1139,7 +1139,40 @@ export class TreeVisualizationService {
     d3.select('body').on('click', null); // 移除点击事件监听
   }
 
-  // 拖動開始
+// 根據ID查找節點數據
+  private findNodeById(nodeId: string): TreeNode | null {
+    // 從當前樹數據中查找
+    const treeData = this.treeDataService.getTreeData();
+    if (!treeData) {
+      return null;
+    }
+
+    const findNode = (node: TreeNode): TreeNode | null => {
+      if (node.id === nodeId) {
+        return node;
+      }
+
+      if (node.children) {
+        for (const child of node.children) {
+          const found = findNode(child);
+          if (found) {
+            return found;
+          }
+        }
+      }
+
+      return null;
+    };
+
+    return findNode(treeData);
+  }
+
+  // 設置拖放模式的方法
+  setDragMode(mode: 'reorder' | 'nest'): void {
+    this._dragMode = mode;
+    console.log('Drag mode set to:', mode);
+  }
+
   // 拖動開始
   private dragStarted(event: any, d: any): void {
     console.log('dragStarted:', d);
@@ -1268,57 +1301,7 @@ export class TreeVisualizationService {
     }
   }
 
-  // 設置拖放模式的方法
-  setDragMode(mode: 'reorder' | 'nest'): void {
-    this._dragMode = mode;
-    console.log('Drag mode set to:', mode);
-  }
-
-// 新增一個方法來根據ID查找節點數據
-  private findNodeById(nodeId: string): TreeNode | null {
-    // 從當前樹數據中查找
-    const treeData = this.treeDataService.getTreeData();
-    if (!treeData) {
-      return null;
-    }
-
-    const findNode = (node: TreeNode): TreeNode | null => {
-      if (node.id === nodeId) {
-        return node;
-      }
-
-      if (node.children) {
-        for (const child of node.children) {
-          const found = findNode(child);
-          if (found) {
-            return found;
-          }
-        }
-      }
-
-      return null;
-    };
-
-    return findNode(treeData);
-  }
-
-// 檢查節點是否是另一個節點的後代
-  private isDescendantNode(node: TreeNode, possibleDescendantId: string): boolean {
-    if (!node.children) {
-      return false;
-    }
-
-    for (const child of node.children) {
-      if (child.id === possibleDescendantId || this.isDescendantNode(child, possibleDescendantId)) {
-        return true;
-      }
-    }
-
-    return false;
-  }
-
 // 拖動結束
-  // 在 TreeVisualizationService 中
   private dragEnded(event: any, d: any): void {
     if (!this.draggedNode) {
       console.log('No dragged node in dragEnded');
@@ -1377,23 +1360,6 @@ export class TreeVisualizationService {
     // 清空拖動狀態
     this.draggedNode = null;
     this.dragOverNode = null;
-  }
-
-  // 檢查節點是否是另一個節點的後代
-  private isDescendantOf(potentialDescendant: any, potentialAncestor: any): boolean {
-    if (!potentialDescendant || !potentialAncestor) {
-      return false;
-    }
-
-    let current = potentialDescendant.parent;
-    while (current) {
-      if (current === potentialAncestor) {
-        return true;
-      }
-      current = current.parent;
-    }
-
-    return false;
   }
 
 }

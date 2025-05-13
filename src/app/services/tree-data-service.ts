@@ -235,86 +235,6 @@ export class TreeDataService {
     this.treeDataSubject.next(newData);
   }
 
-  // 節點關聯
-  linkNodes(sourceId: string, targetId: string): void {
-    // TODO: 實現節點關聯邏輯
-    const currentData = this.treeDataSubject.getValue();
-    if (!currentData || sourceId === targetId) {
-      return;
-    }
-    const newData = this.deepCloneTree(currentData);
-    const sourceNode = this.getNodeByIdRecursion(newData, sourceId);
-    if (sourceNode) {
-      if (!sourceNode.relatedTo) {
-        sourceNode.relatedTo = [];
-      }
-      if (!sourceNode.relatedTo.includes(targetId)) {
-        sourceNode.relatedTo?.push(targetId);
-      } else {
-        console.warn('關聯已存在');
-      }
-    } else {
-      console.warn('找不到節點' + sourceId);
-    }
-    const targetNode = this.getNodeByIdRecursion(newData, targetId);
-    if (targetNode) {
-      if (!targetNode.relatedTo) {
-        targetNode.relatedTo = [];
-      }
-      if (!targetNode.relatedTo.includes(sourceId)) {
-        targetNode.relatedTo?.push(sourceId);
-      } else {
-        console.warn('關聯已存在');
-      }
-    } else {
-      console.warn('找不到節點' + targetId);
-    }
-    // 發出更新後的樹
-    this.treeDataSubject.next(newData);
-  }
-
-  // 取消節點關聯
-  unlinkNodes(sourceId: string, targetId: string): void {
-    // TODO: 實現取消節點關聯邏輯
-    const currentData = this.treeDataSubject.getValue();
-    if (!currentData || sourceId === targetId) {
-      return;
-    }
-    const newData = this.deepCloneTree(currentData);
-    const sourceNode = this.getNodeByIdRecursion(newData, sourceId);
-    if (sourceNode) {
-      if (sourceNode.relatedTo && sourceNode.relatedTo.includes(targetId)) {
-        sourceNode.relatedTo = sourceNode.relatedTo.filter(r => r !== targetId);
-        if (sourceNode.relatedTo.length === 0) {
-          delete sourceNode.relatedTo;
-        }
-      } else {
-        console.warn('找不到已存在關聯' + sourceId);
-      }
-    } else {
-      console.warn('找不到節點' + sourceId);
-    }
-    const targetNode = this.getNodeByIdRecursion(newData, targetId);
-    if (targetNode) {
-      if (targetNode.relatedTo && targetNode.relatedTo.includes(sourceId)) {
-        targetNode.relatedTo = targetNode.relatedTo.filter(r => r !== sourceId);
-        if (targetNode.relatedTo.length === 0) {
-          delete targetNode.relatedTo;
-        }
-      } else {
-        console.warn('找不到已存在關聯' + targetId);
-      }
-    } else {
-      console.warn('找不到節點' + targetId);
-    }
-// 發出更新後的樹
-    this.treeDataSubject.next(newData);
-  }
-
-  // 移動節點到新的父節點
-  // 在 TreeDataService 中添加
-
-// 移動節點 - 根據模式決定操作
   // 移動節點 - 根據模式決定操作
   moveNode(sourceId: string, targetId: string, mode: 'reorder' | 'nest' = 'nest'): void {
     console.log('moveNode called:', {sourceId, targetId, mode});
@@ -621,18 +541,18 @@ export class TreeDataService {
     return result;
   }
 
-  async getHeight(node: TreeNode | null): Promise<number> {
-    return this.gH(node);
+  async getHeightAsync(node: TreeNode | null): Promise<number> {
+    return this.getHeight(node);
   }
 
-  gH(node: TreeNode | null): number {
+  getHeight(node: TreeNode | null): number {
     if (!node) {
       return 0;
     }
     if (node.children) {
       let highest = 0;
       for (const child of node.children) {
-        const childHeight = this.gH(child);
+        const childHeight = this.getHeight(child);
         if (childHeight > highest) {
           highest = childHeight;
         }
