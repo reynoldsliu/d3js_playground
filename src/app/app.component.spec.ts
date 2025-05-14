@@ -23,13 +23,13 @@ describe('AppComponent', () => {
   it(`should have as title 'angular8-app'`, () => {
     const fixture = TestBed.createComponent(AppComponent);
     const app = fixture.debugElement.componentInstance;
-    expect(app.title).toEqual('angular8-app');
+    expect(app.title).toEqual('d3js_playground');
   });
 
   it('should render title', () => {
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
     const compiled = fixture.debugElement.nativeElement;
-    expect(compiled.querySelector('.content span').textContent).toContain('angular8-app app is running!');
+    expect(compiled.querySelector('.content span').textContent).toContain('d3js_playground app is running!');
   });
 });
