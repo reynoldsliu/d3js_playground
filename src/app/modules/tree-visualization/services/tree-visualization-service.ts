@@ -1,4 +1,4 @@
-import {ElementRef, Injectable} from '@angular/core';
+import {Injectable, OnDestroy} from '@angular/core';
 import * as d3 from 'd3';
 import {TreeNode} from '../interfaces/interfaces';
 import {HierarchyNode} from 'd3-hierarchy';
@@ -6,9 +6,12 @@ import {TreeDataService} from './tree-data-service';
 import {TreeLayout} from 'd3';
 import {TreeDragDropService} from './tree-drag-drop-service';
 import {TreeZoomService} from './tree-zoom-service';
+import {TreeTooltipService} from './tree-tooltip-service';
+import {StyleUpdateEvent, TreeStyleService} from './tree-style-service';
+import {Subject, takeUntil} from 'rxjs';
 
 @Injectable()
-export class TreeVisualizationService {
+export class TreeVisualizationService implements OnDestroy {
 
   public svg: any;
   public nodes: any;
@@ -20,69 +23,34 @@ export class TreeVisualizationService {
   public svgHeight = 800;
   public nodeWidth = 220;
   public nodeHeight = 120;
+  private styles: any;
 
-  // 添加样式配置
-  private styles = {
-    node: {
-      default: {
-        fill: '#e8f5e9',
-        stroke: '#81c784',
-        strokeWidth: '1px'
-      },
-      selected: {
-        fill: '#d4e6f7',
-        stroke: '#3498db',
-        strokeWidth: '2px'
-      },
-      similar: {
-        stroke: '#f39c12',
-        strokeWidth: '2px',
-        strokeDash: '5,3'
-      },
-      credit: {  // 額度樣式
-        fill: '#e3f2fd',
-        stroke: '#64b5f6',
-        strokeWidth: '1px'
-      },
-      control: {  // 合控樣式
-        fill: '#f3e5f5',
-        stroke: '#ba68c8',
-        strokeWidth: '1px'
-      },
-      company: {  // 公司（根節點）樣式
-        fill: '#e8f5e9',
-        stroke: '#2e7d32',
-        strokeWidth: '2px'
-      }
-    },
-    link: {
-      stroke: '#ccc',
-      strokeWidth: '1px',
-      opacity: 1
-    },
-    text: {
-      title: {
-        size: '14px',
-        color: '#333'
-      },
-      info: {
-        size: '12px',
-        color: '#666'
-      }
-    },
-    tooltip: {
-      icon: {
-        size: '16px',
-        color: '#666'
-      },
-      background: '#fff',
-      border: '#ccc'
-    }
-  };
+  // For cleanup
+  private destroy$ = new Subject<void>();
 
   constructor(private treeDataService: TreeDataService,
               private treeDragDropService: TreeDragDropService,
-              private treeZoomService: TreeZoomService,) {
+              private treeZoomService: TreeZoomService,
+              private treeStyleService: TreeStyleService,
+              private treeTooltipService: TreeTooltipService,) {
+    // Get initial styles
+    this.styles = this.treeStyleService.styles;
+
+    // Subscribe to style changes
+    this.treeStyleService.styles$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(styles => {
+        this.styles = styles;
+        // Instead of reinitializing the entire tree, just update styles
+        this.updateAllStyles();
+      });
+
+    // Subscribe to style update events for targeted updates
+    this.treeStyleService.styleUpdate$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(event => {
+        this.handleStyleUpdateEvent(event);
+      });
   }
 
   /**
@@ -157,6 +125,7 @@ export class TreeVisualizationService {
           reports: [],
           type: '合控',
           amount: 150000000, // 1.5億
+          note: '備註測試',
           children: [
             {
               id: '5',
@@ -261,7 +230,13 @@ export class TreeVisualizationService {
     });
 
     // 初始化tooltip
-    const tooltip = this.initializeTooltip();
+    const tooltip =
+      this.treeTooltipService.initializeTooltip(this.styles.tooltip,
+        this.svgWidth,
+        this.svgHeight,
+        this.nodeWidth,
+        this.nodeHeight,
+      );
 
     // Create SVG
     this.svg = d3.select('.tree-visualization')
@@ -393,7 +368,7 @@ export class TreeVisualizationService {
       .attr('data-spacing-ignore', 'true') // Add a custom attribute for identification
       .on('click', (event: any, d: any) => {
         event.stopPropagation();
-        this.toggleNode(d);
+        this.toggleFoldOfNode(d);
       })
       .append('circle')
       .attr('r', 8)
@@ -506,82 +481,16 @@ export class TreeVisualizationService {
       .style('font-size', this.styles.text.info.size);
 
     // 在节点组中添加提示图标
-    const noteIcons = this.nodes.append('g')
-      .attr('class', 'note-icon')
-      .style('cursor', 'pointer')
-      .style('visibility', (d: { data: TreeNode; }) => {
-        const nodeData = d.data as TreeNode;
-        return nodeData.note ? 'visible' : 'hidden';
-      });
+    const noteIcons = this.treeTooltipService.genTooltip(this.nodes);
 
-    // 添加图标背景圆圈
-    noteIcons.append('circle')
-      .attr('cx', this.nodeWidth / 2 - 12)
-      .attr('cy', -this.nodeHeight / 2 + 12)
-      .attr('r', 8)
-      .style('fill', '#fff')
-      .style('stroke', this.styles.tooltip.icon.color)
-      .style('stroke-width', '1px');
-
-    // 添加 "i" 文本作为图标
-    noteIcons.append('text')
-      .attr('x', this.nodeWidth / 2 - 12)
-      .attr('y', -this.nodeHeight / 2 + 12)
-      .attr('dy', '0.3em')
-      .style('text-anchor', 'middle')
-      .style('fill', this.styles.tooltip.icon.color)
-      .style('font-size', '12px')
-      .style('font-weight', 'bold')
-      .style('font-family', 'serif')
-      .text('i');
-
-    // 修改鼠标事件处理
-    let activeTooltip = false;
-
-    noteIcons
-      .on('mouseover', (event: any, d: any) => {
-        const nodeData = d.data as TreeNode;
-        if (nodeData.note) {
-          activeTooltip = true;
-          tooltip
-            .style('visibility', 'visible')
-            .text(nodeData.note);
-
-          const iconBox = (event.target as SVGElement).getBoundingClientRect();
-          tooltip
-            .style('left', `${iconBox.right + 10}px`)
-            .style('top', `${iconBox.top}px`);
-        }
-      })
-      .on('mouseout', (event: any) => {
-        // 检查鼠标是否真的离开了图标区域
-        const relatedTarget = event.relatedTarget;
-        if (!relatedTarget || !event.target.contains(relatedTarget)) {
-          activeTooltip = false;
-          // 使用短暂延迟来处理鼠标快速移动的情况
-          setTimeout(() => {
-            if (!activeTooltip) {
-              tooltip.style('visibility', 'hidden');
-            }
-          }, 100);
-        }
-      })
-      .on('click', (event: any) => {
-        // 阻止事件冒泡
-        event.stopPropagation();
-        // 点击时直接隐藏 tooltip
-        tooltip.style('visibility', 'hidden');
-        activeTooltip = false;
-      });
-
-    // 添加对整个文档的点击事件监听
-    d3.select('body').on('click', () => {
-      if (tooltip) {
-        tooltip.style('visibility', 'hidden');
-        activeTooltip = false;
-      }
-    });
-
+    // TODO 整合 全文件聆聽事件
+    // part in TreeTooltipService
+    // d3.select('body').on('click', () => {
+    //   if (this.tooltip) {
+    //     this.tooltip.style('visibility', 'hidden');
+    //     this.setActiveTooltip(false);
+    //   }
+    // });
     return this.svg.node();
   }
 
@@ -632,7 +541,7 @@ export class TreeVisualizationService {
   }
 
 
-  private toggleNode(d: any) {
+  private toggleFoldOfNode(d: any) {
     if (d.children) {
       // Collapse
       d._children = d.children;
@@ -646,15 +555,11 @@ export class TreeVisualizationService {
     }
 
     // Update the tree
-    // this.initializeTree(d);
     const currentData = this.treeDataService.treeDataSubject.getValue();
     if (currentData) {
       const newData = this.treeDataService.deepCloneTree(currentData);
       this.treeDataService.treeDataSubject.next(newData);
-
     }
-
-
   }
 
   // TODO 處理節點點擊事件
@@ -669,98 +574,10 @@ export class TreeVisualizationService {
 
       // 更新节点选择状态
       this.treeDataService.selectNode(nodeId);
-      this.updateNodeStyles(nodeId, nodeData.name);
+      this.treeStyleService.updateNodeStyles(this.nodes, nodeId, nodeData.name);
 
       // 恢复之前的变换状态，防止画面移动
       this.svg.call(this.treeZoomService.zoom.transform, currentTransform);
-    }
-  }
-
-  // TODO 處理按鈕點擊事件
-  private handleButtonClick(event: any, buttonData: any) {
-    const companyId = d3.select(event.target.closest('.node')).attr('id').replace('company-', '');
-    // TODO 根據按鈕類型執行對應操作...
-  }
-
-  // TODO 顯示公司報告
-  private showCompanyReports(company: TreeNode) {
-    // TODO 發出事件通知應用程式顯示報告列表...
-  }
-
-  // 新增方法：统一更新节点样式
-  private updateNodeStyles(selectedNodeId: string, nodeName: string) {
-    // 重置所有节点的选中状态
-    this.nodes.select('rect')
-      .style('stroke', (d: any) => {
-        const nodeData = d.data as TreeNode;
-        if (nodeData.level === 0) {
-          return this.styles.node.company.stroke;
-        }
-        if (nodeData.type === '額度') {
-          return this.styles.node.credit.stroke;
-        }
-        if (nodeData.type === '合控') {
-          return this.styles.node.control.stroke;
-        }
-        return this.styles.node.default.stroke;
-      })
-      .style('stroke-width', (d: any) => {
-        const nodeData = d.data as TreeNode;
-        if (nodeData.level === 0) {
-          return this.styles.node.company.strokeWidth;
-        }
-        if (nodeData.type === '額度') {
-          return this.styles.node.credit.strokeWidth;
-        }
-        if (nodeData.type === '合控') {
-          return this.styles.node.control.strokeWidth;
-        }
-        return this.styles.node.default.strokeWidth;
-      })
-      .style('stroke-dasharray', null);
-
-    // 设置选中节点样式
-    d3.select(`#node-${selectedNodeId}`).select('rect')
-      .style('stroke', this.styles.node.selected.stroke)
-      .style('stroke-width', this.styles.node.selected.strokeWidth);
-
-    // 高亮相似节点 TODO
-    // const similarNodes = this.treeDataService.findNodesByName(nodeName);
-    // this.highlightSimilarNodes(similarNodes, selectedNodeId);
-  }
-
-  // 修改 highlightSimilarNodes 方法
-  highlightSimilarNodes(similarNodes: TreeNode[], currentNodeId: string): void {
-    if (!similarNodes || similarNodes.length === 0) {
-      return;
-    }
-
-    const nodesToHighlight = similarNodes.filter(node => node.id !== currentNodeId);
-    nodesToHighlight.forEach(node => {
-      if (node.id) {
-        d3.select(`#node-${node.id}`).select('rect')
-          .style('stroke', this.styles.node.similar.stroke)
-          .style('stroke-width', this.styles.node.similar.strokeWidth)
-          .style('stroke-dasharray', this.styles.node.similar.strokeDash);
-      }
-    });
-  }
-
-  resetAllNodeStyles(): void {
-    // 重置所有節點樣式到默認狀態
-    this.nodes.select('rect')
-      .style('fill', '#69b3a2')
-      .style('stroke', '#000')
-      .style('stroke-width', '1px')
-      .style('stroke-dasharray', null);
-
-    // 重新應用選中節點的樣式
-    const selectedNodeId = this.treeDataService.getSelectedNodeId();
-    if (selectedNodeId) {
-      d3.select(`#node-${selectedNodeId}`).select('rect')
-        .style('fill', '#d4e6f7')
-        .style('stroke', '#3498db')
-        .style('stroke-width', '3px');
     }
   }
 
@@ -789,20 +606,9 @@ export class TreeVisualizationService {
     if (selectedNodeId) {
       const selectedNode = this.treeDataService.getSelectedNode();
       if (selectedNode) {
-        this.updateNodeStyles(selectedNodeId, selectedNode.name);
+        this.treeStyleService.updateNodeStyles(this.nodes, selectedNodeId, selectedNode.name);
       }
     }
-  }
-
-// 輔助方法：突出顯示特定節點
-  highlightNode(nodeId: string, className: string): void {
-    d3.select(`#node-${nodeId}`).classed(className, true);
-
-    // 如果需要設置樣式而不是類
-    d3.select(`#node-${nodeId}`).select('rect')
-      .style('fill', '#d4e6f7')
-      .style('stroke', '#3498db')
-      .style('stroke-width', '3px');
   }
 
   public updateTree(data: TreeNode): void {
@@ -908,11 +714,8 @@ export class TreeVisualizationService {
 
     // 更新提示图标
     this.nodes = this.g.selectAll('.node');
-    const noteIcons = this.nodes.select('.note-icon')
-      .style('visibility', (d: { data: TreeNode; }) => {
-        const nodeData = d.data as TreeNode;
-        return nodeData.note ? 'visible' : 'hidden';
-      });
+
+    const noteIcons = this.treeTooltipService.updateTooltip(this.nodes);
 
     // 应用新的变换，使用过渡动画
     this.svg.transition()
@@ -997,65 +800,40 @@ export class TreeVisualizationService {
     });
   }
 
-  // 添加自动居中方法
-  public centerGraph(): void {
-    if (!this.svg || !this.g) {
+  private updateAllStyles() {
+    if (!this.svg) {
       return;
     }
 
-    // 获取所有节点的边界
-    const bounds = this.g.node().getBBox();
+    // Update link styles
+    if (this.links) {
+      this.links = this.treeStyleService.updateLinkStyle(this.links);
+    }
 
-    // 考虑节点的实际大小和边距
-    const padding = 50;
-    const effectiveWidth = bounds.width + this.nodeWidth + padding * 2;
-    const effectiveHeight = bounds.height + this.nodeHeight + padding * 2;
+    // Update node styles
+    if (this.nodes) {
+      // Update rectangle styles
+      this.treeStyleService.updateNodeRect(this.nodes.selectAll('rect'));
 
-    // 计算适当的缩放比例
-    const scale = Math.min(
-      (this.svgWidth - padding * 2) / effectiveWidth,
-      (this.svgHeight - padding * 2) / effectiveHeight,
-      1.5
-    );
-
-    // 计算居中位置，考虑节点的实际大小
-    const translateX = (this.svgWidth - effectiveWidth * scale) / 2 - (bounds.x - padding) * scale;
-    const translateY = (this.svgHeight - effectiveHeight * scale) / 2 - (bounds.y - padding) * scale;
-
-    const transform = d3.zoomIdentity
-      .translate(translateX, translateY)
-      .scale(scale);
-
-    this.svg.transition()
-      .duration(750)
-      .call(this.treeZoomService.zoom.transform, transform);
+      // Update text styles
+      this.treeStyleService.updateTitleStyle(this.nodes.selectAll('.node-name'));
+      this.treeStyleService.updateInfoStyle(this.nodes.selectAll('.node-type, .node-currency, .node-percentages'));
+    }
   }
 
-
-  private initializeTooltip() {
-    // 移除可能存在的旧 tooltip
-    d3.select('body').selectAll('.node-tooltip').remove();
-
-    // 创建新的 tooltip
-    const tooltip = d3.select('body').append('div')
-      .attr('class', 'node-tooltip')
-      .style('position', 'absolute')
-      .style('visibility', 'hidden')
-      .style('background-color', this.styles.tooltip.background)
-      .style('border', `1px solid ${this.styles.tooltip.border}`)
-      .style('padding', '8px')
-      .style('border-radius', '4px')
-      .style('font-size', '12px')
-      .style('box-shadow', '0 2px 4px rgba(0,0,0,0.1)')
-      .style('pointer-events', 'none'); // 防止 tooltip 本身捕获鼠标事件
-
-    return tooltip;
+  /**
+   * Handle style update events for efficient updates
+   */
+  private handleStyleUpdateEvent(event: StyleUpdateEvent): void {
+    if (!this.svg || !this.nodes) {
+      return;
+    }
+    this.treeStyleService.handleStyleUpdateEvent(event, this.nodes);
   }
 
-  // 在组件销毁时清理 tooltip
-  public cleanup(): void {
-    d3.select('body').selectAll('.node-tooltip').remove();
-    d3.select('body').on('click', null); // 移除点击事件监听
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
 }

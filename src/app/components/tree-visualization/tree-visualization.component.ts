@@ -1,16 +1,14 @@
 import {Component, OnInit, ElementRef, ViewChild, AfterViewInit, OnDestroy, HostListener} from '@angular/core';
 import {Subscription} from 'rxjs';
-import * as d3 from 'd3';
 import {TreeNode} from '../../modules/tree-visualization/interfaces/interfaces';
 import {TreeVisualizationService} from '../../modules/tree-visualization/services/tree-visualization-service';
-import {range} from 'd3';
 import {TreeDataService} from '../../modules/tree-visualization/services/tree-data-service';
 import {DialogService} from 'primeng/dynamicdialog';
 import {NodeEditDialogComponent} from '../node-edit-dialog/node-edit-dialog.component';
-import {TooltipModule} from 'primeng/tooltip';
 import {FormBuilder, FormGroup} from '@angular/forms';
 import {TreeDragDropService} from '../../modules/tree-visualization/services/tree-drag-drop-service';
 import {TreeZoomService} from '../../modules/tree-visualization/services/tree-zoom-service';
+import {TreeStyleService} from '../../modules/tree-visualization/services/tree-style-service';
 
 @Component({
   selector: 'app-tree-visualization',
@@ -19,21 +17,21 @@ import {TreeZoomService} from '../../modules/tree-visualization/services/tree-zo
   providers: [DialogService]
 })
 export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDestroy {
+
+  // 添加一個標誌來防止無限循環
+  private isRefreshing = false;
+
   @ViewChild('treeContainer', {static: true}) public treeContainer!: ElementRef;
   @ViewChild('tooltip') tooltip!: ElementRef;
+
   private subscription: Subscription | undefined;
   private treeDataSubscription: Subscription | undefined;
   private dragDropSubscription: Subscription | undefined;
+
   public dragMode: 'reorder' | 'nest' = 'nest'; // 默認為嵌套模式
-
-
+  public data: TreeNode | null = null;
   selectedNode: TreeNode | null = null;
   hoveredNode: TreeNode | null = null;
-  private zoom: any;
-  private svg: any;
-  public data: TreeNode | null = null;
-  private linkedNodes: Set<string> = new Set();
-  protected isQueryingLinks: boolean = false;
   showTooltip: boolean = false;
   tooltipX: number = 0;
   tooltipY: number = 0;
@@ -45,6 +43,7 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
               private treeDataService: TreeDataService,
               private treeDragDropService: TreeDragDropService,
               private treeZoomService: TreeZoomService,
+              private treeStyleService: TreeStyleService,
               private dialogService: DialogService) {
     this.form = this.fb.group({
       dragMode: ['nest'] // 默認值
@@ -67,18 +66,10 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
       }
     );
 
-    // // 訂閱拖放完成事件
-    // this.dragDropSubscription = this.treeVisualizationService.dragDropCompleted$.subscribe(
-    //   ({sourceId, targetId, mode}) => {
-    //     console.log('Tree component received drag-drop event:', { sourceId, targetId, mode });
-    //     this.treeDataService.moveNode(sourceId, targetId, mode);
-    //   }
-    // );
-
     // 初始設置
     this.treeDragDropService.setDragMode(this.dragMode);
-    // 監聽拖放模式變化
 
+    // 監聽拖放模式變化
     this.form.get('dragMode')!.valueChanges.subscribe(mode => {
       this.dragMode = mode;
       this.treeDragDropService.setDragMode(mode);
@@ -134,7 +125,6 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
       this.treeContainer.nativeElement.appendChild(initNode);
 
       // 設置縮放功能
-      // this.treeVisualizationService.setupZoom();
       this.setUpZoom();
     } finally {
       // 確保標誌被重置
@@ -150,12 +140,10 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
   }
 
   zoomIn() {
-    // this.treeVisualizationService.zoomIn();
     this.treeZoomService.zoomIn();
   }
 
   zoomOut() {
-    // this.treeVisualizationService.zoomOut();
     this.treeZoomService.zoomOut();
   }
 
@@ -181,8 +169,6 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
     this.setUpZoom();
   }
 
-// 添加一個標誌來防止無限循環
-  private isRefreshing = false;
 
   createNode(): void {
     // Get the current tree height
@@ -280,10 +266,6 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
 
       // 清空側邊欄資料 - 將選中節點設為null
       this.treeDataService.selectNode(null);
-
-      // 清空相關連結狀態
-      this.linkedNodes.clear();
-      this.isQueryingLinks = false;
     }
   }
 
@@ -344,7 +326,7 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
 
     // 在視覺化服務中高亮這些節點
     if (this.selectedNode.id) {
-      this.treeVisualizationService.highlightSimilarNodes(similarNodes, this.selectedNode.id);
+      this.treeStyleService.highlightSimilarNodes(similarNodes, this.selectedNode.id);
     }
   }
 
@@ -359,53 +341,6 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
     if (this.dragDropSubscription) {
       this.dragDropSubscription.unsubscribe();
     }
-  }
-
-  /**
-   * Unlinks the selected node from all its connections
-   */
-  unlinkNode(): void {
-    if (!this.selectedNode) {
-      return;
-    }
-
-    // Remove the node from the linked nodes set
-    this.linkedNodes.delete(this.selectedNode.id);
-
-    // Remove the node from other nodes' linked nodes
-    this.data?.children?.forEach(child => {
-      if (child.linkedNodes?.includes(this.selectedNode!.id)) {
-        child.linkedNodes = child.linkedNodes.filter(id => id !== this.selectedNode!.id);
-      }
-    });
-
-    // Clear the selected node's linked nodes
-    this.selectedNode.linkedNodes = [];
-
-    this.renderTree(this.data);
-  }
-
-  /**
-   * Queries and highlights all nodes linked to the selected node
-   */
-  queryLinkedNodes(): void {
-    if (!this.selectedNode) {
-      return;
-    }
-    if (this.isQueryingLinks) {
-      // Clear all highlights
-      this.linkedNodes.clear();
-      this.isQueryingLinks = false;
-    } else {
-      // Add the selected node and its linked nodes to the set
-      this.linkedNodes.add(this.selectedNode.id);
-      this.selectedNode.linkedNodes?.forEach(id => {
-        this.linkedNodes.add(id);
-      });
-      this.isQueryingLinks = true;
-    }
-
-    this.renderTree(this.data);
   }
 
 }

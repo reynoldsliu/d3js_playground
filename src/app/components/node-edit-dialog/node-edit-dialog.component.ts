@@ -1,7 +1,6 @@
 import {Component, OnInit} from '@angular/core';
 import {DynamicDialogRef, DynamicDialogConfig} from 'primeng/dynamicdialog';
 import {TreeNode} from '../../modules/tree-visualization/interfaces/interfaces';
-import {DropdownChangeEvent} from 'primeng/dropdown';
 import {TreeVisualizationService} from '../../modules/tree-visualization/services/tree-visualization-service';
 import {TreeDataService} from '../../modules/tree-visualization/services/tree-data-service';
 

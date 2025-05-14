@@ -428,7 +428,6 @@ export class TreeDataService {
 
   // 查找相同名稱的節點
   findNodesByName(name: string): TreeNode[] {
-    // TODO: 實現查找相同名稱節點的邏輯
     const currentData = this.treeDataSubject.getValue();
     if (!currentData) {
       return [];
@@ -436,6 +435,7 @@ export class TreeDataService {
 
     // 不需要複製數據，因為我們只是讀取，不修改
     const result: TreeNode[] = [];
+    // TODO 修正演算法
     this.collectNodesByName(currentData, name, result);
     return result;
   }
@@ -584,12 +584,8 @@ export class TreeDataService {
           }
         }
       }
-
       return null;
     };
-
     return findNode(treeData);
   }
-
-
 }
