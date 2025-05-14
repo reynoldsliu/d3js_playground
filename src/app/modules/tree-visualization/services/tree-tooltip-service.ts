@@ -14,7 +14,6 @@ export class TreeTooltipService {
 
 
   constructor() {
-    // 初始化tooltip
   }
 
   initializeTooltip(tooltipStyle: any, svgWidth?: number,
@@ -24,10 +23,10 @@ export class TreeTooltipService {
     this.setLocalBorder(svgWidth, svgHeight, nodeWidth, nodeHeight);
 
     this.tooltipStyle = tooltipStyle;
-    // 移除可能存在的旧 tooltip
+    // 移除舊的 tooltip
     d3.select('body').selectAll('.node-tooltip').remove();
 
-    // 创建新的 tooltip
+    // 建立新的 tooltip
     this.tooltip = d3.select('body').append('div')
       .attr('class', 'node-tooltip')
       .style('position', 'absolute')
@@ -38,7 +37,7 @@ export class TreeTooltipService {
       .style('border-radius', '4px')
       .style('font-size', '12px')
       .style('box-shadow', '0 2px 4px rgba(0,0,0,0.1)')
-      .style('pointer-events', 'none'); // 防止 tooltip 本身捕获鼠标事件
+      .style('pointer-events', 'none'); // 防止 tooltip 本身攔截滑鼠事件
 
     return this.tooltip;
   }
@@ -58,7 +57,7 @@ export class TreeTooltipService {
     }
   }
 
-// 在组件销毁时清理 tooltip
+// 銷毀時清除 tooltip
   public cleanup(): void {
     d3.select('body').selectAll('.node-tooltip').remove();
     d3.select('body').on('click', null); // 移除点击事件监听
@@ -76,7 +75,7 @@ export class TreeTooltipService {
         return nodeData.note ? 'visible' : 'hidden';
       });
 
-    // 添加图标背景圆圈
+    // 添加圓框
     noteIcons.append('circle')
       .attr('cx', this.nodeWidth / 2 - 12)
       .attr('cy', -this.nodeHeight / 2 + 12)
@@ -85,7 +84,7 @@ export class TreeTooltipService {
       .style('stroke', this.tooltipStyle.icon.color)
       .style('stroke-width', '1px');
 
-    // 添加 "i" 文本作为图标
+    // 添加i作為符號內容
     noteIcons.append('text')
       .attr('x', this.nodeWidth / 2 - 12)
       .attr('y', -this.nodeHeight / 2 + 12)
@@ -97,7 +96,7 @@ export class TreeTooltipService {
       .style('font-family', 'serif')
       .text('i');
 
-    // 修改鼠标事件处理
+    // 修改滑鼠事件處理
     this.activeTooltip = false;
 
     noteIcons
@@ -116,11 +115,11 @@ export class TreeTooltipService {
         }
       })
       .on('mouseout', (event: any) => {
-        // 检查鼠标是否真的离开了图标区域
+        // 檢查滑鼠是否離開圖形
         const relatedTarget = event.relatedTarget;
         if (!relatedTarget || !event.target.contains(relatedTarget)) {
           this.activeTooltip = false;
-          // 使用短暂延迟来处理鼠标快速移动的情况
+          // 使用短暫延遲處理滑鼠快速移動
           setTimeout(() => {
             if (!this.activeTooltip) {
               this.tooltip.style('visibility', 'hidden');
@@ -131,12 +130,12 @@ export class TreeTooltipService {
       .on('click', (event: any) => {
         // 阻止事件冒泡
         event.stopPropagation();
-        // 点击时直接隐藏 tooltip
+        // 點擊時直接隱藏 tooltip
         this.tooltip.style('visibility', 'hidden');
         this.activeTooltip = false;
       });
 
-    // 添加对整个文档的点击事件监听
+    // 對所有文件聆聽事件
     d3.select('body').on('click', () => {
       if (this.tooltip) {
         this.tooltip.style('visibility', 'hidden');

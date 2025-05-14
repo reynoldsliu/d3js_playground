@@ -1,8 +1,6 @@
 import {Component, OnInit} from '@angular/core';
 import {DynamicDialogRef, DynamicDialogConfig} from 'primeng/dynamicdialog';
 import {TreeNode} from '../../modules/tree-visualization/interfaces/interfaces';
-import {TreeVisualizationService} from '../../modules/tree-visualization/services/tree-visualization-service';
-import {TreeDataService} from '../../modules/tree-visualization/services/tree-data-service';
 
 /**
  * NodeEditDialogComponent is a dialog component for creating and editing tree nodes.
@@ -19,28 +17,11 @@ import {TreeDataService} from '../../modules/tree-visualization/services/tree-da
   styleUrls: ['./node-edit-dialog.component.scss']
 })
 export class NodeEditDialogComponent implements OnInit {
-  /**
-   * The node being edited or created
-   * @type {TreeNode}
-   */
+
   node: TreeNode;
-
-  /**
-   * Indicates whether the node is new or existing
-   * @type {boolean}
-   */
   isNew: boolean;
-
-  /**
-   * Indicates whether the node is read-only
-   * @type {boolean}
-   */
   readOnly: boolean;
 
-  /**
-   * Available node types for selection
-   * @type {Array<{label: string, value: string}>}
-   */
   nodeTypes = [
     {label: '額度', value: '額度' as const},
     {label: '合控', value: '合控' as const},
@@ -48,14 +29,7 @@ export class NodeEditDialogComponent implements OnInit {
 
   selectedNode: TreeNode | null = null;
 
-  /**
-   * Constructs a new NodeEditDialogComponent
-   * @param {DynamicDialogRef} ref - Reference to the dialog
-   * @param {DynamicDialogConfig} config - Configuration object containing dialog data
-   */
   constructor(
-    private treeVisualizationService: TreeVisualizationService,
-    private treeDataService: TreeDataService,
     public ref: DynamicDialogRef,
     public config: DynamicDialogConfig
   ) {
@@ -64,12 +38,8 @@ export class NodeEditDialogComponent implements OnInit {
     this.readOnly = config.data.readOnly;
   }
 
-  /**
-   * Initialize component with default values
-   * Ensures required properties are available
-   */
   ngOnInit(): void {
-    // 確保必要的屬性已初始化，但不設置默認類型讓用戶選擇
+    // 確保必要的屬性已初始化，但不設預設類型讓使用者選擇
     if (this.node.amount === undefined) {
       this.node.amount = 0;
     }
@@ -79,10 +49,6 @@ export class NodeEditDialogComponent implements OnInit {
     }
   }
 
-  /**
-   * Validates the form inputs
-   * @returns {boolean} True if all required fields are filled, false otherwise
-   */
   isValid(): boolean {
     return !!this.node.name &&
       !!this.node.type &&
@@ -90,10 +56,6 @@ export class NodeEditDialogComponent implements OnInit {
       this.node.amount !== null;
   }
 
-  /**
-   * Handles the save action
-   * Closes the dialog with the updated node data if the form is valid
-   */
   onConfirm(): void {
     if (this.isValid()) {
       this.ref.close({
@@ -103,10 +65,6 @@ export class NodeEditDialogComponent implements OnInit {
     }
   }
 
-  /**
-   * Handles the cancel action
-   * Closes the dialog without saving changes
-   */
   onCancel(): void {
     this.ref.close({
       action: 'cancel'
@@ -119,10 +77,6 @@ export class NodeEditDialogComponent implements OnInit {
     if (node) {
       this.node = node;
     }
-    console.log('Selected node in parent:', this.selectedNode);
-    console.log(this.selectedNode === null);
-
-    // Now you can use this.selectedNode for whatever you need
   }
 
 }

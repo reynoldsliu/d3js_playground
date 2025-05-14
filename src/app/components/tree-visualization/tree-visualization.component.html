@@ -10,25 +10,7 @@
       <button (click)="reset()" title="重置視圖">
         <i class="fa fa-expand"></i> 重置
       </button>
-      <!--      TODO demo disabled-->
-      <!--       在控制面板中添加 -->
-      <!--      <div class="drag-mode-selector">-->
-      <!--        <label class="mode-option">-->
-      <!--          <input type="radio" name="dragMode" [(ngModel)]="dragMode" value="nest">-->
-      <!--          移動節點 (將節點移動為目標的子節點)-->
-      <!--        </label>-->
-      <!--        <label class="mode-option">-->
-      <!--          <input type="radio" name="dragMode" [(ngModel)]="dragMode" value="reorder">-->
-      <!--          交換位置 (交換兩節點位置)-->
-      <!--        </label>-->
-      <!--      </div>-->
     </div>
-    <!--remove unused code-->
-    <!--    <div class="tree-actions">-->
-    <!--      <button (click)="createNode()" title="創建新節點">-->
-    <!--        <i class="fa fa-plus"></i> 新增-->
-    <!--      </button>-->
-    <!--    </div>-->
   </div>
 
   <div class="visualization-container">
@@ -40,53 +22,6 @@
   </div>
 
   <div *ngIf="selectedNode" class="sidebar">
-    <!--    TODO demo disabled-->
-    <!--    <div class="sidebar-header">-->
-    <!--      <h3>{{ selectedNode.name }}</h3>-->
-    <!--      <span class="node-status" [class.locked]="selectedNode.locked">-->
-    <!--        {{ selectedNode.locked ? '已鎖定' : '正常' }}-->
-    <!--      </span>-->
-    <!--    </div>-->
-
-    <!--    <div class="node-details">-->
-    <!--      <div class="detail-item">-->
-    <!--        <span class="label">ID:</span>-->
-    <!--        <span class="value">{{ selectedNode.id }}</span>-->
-    <!--      </div>-->
-    <!--      <div class="detail-item">-->
-    <!--        <span class="label">層級:</span>-->
-    <!--        <span class="value">{{ selectedNode.level }}</span>-->
-    <!--      </div>-->
-    <!--      <div class="detail-item">-->
-    <!--        <span class="label">報告數:</span>-->
-    <!--        <span class="value">{{ selectedNode.reports?.length || 0 }}</span>-->
-    <!--      </div>-->
-    <!--      <div class="detail-item" *ngIf="selectedNode.note">-->
-    <!--        <span class="label">備註:</span>-->
-    <!--        <span class="value">{{ selectedNode.note }}</span>-->
-    <!--      </div>-->
-    <!--    </div>-->
-
-    <!--    TODO demo disabled-->
-    <!--    <div class="node-actions">-->
-    <!--      <button (click)="editNode()" [disabled]="selectedNode.locked">-->
-    <!--        <i class="fa fa-edit"></i> 編輯-->
-    <!--      </button>-->
-    <!--      <button (click)="deleteNode()" [disabled]="selectedNode.locked">-->
-    <!--        <i class="fa fa-trash"></i> 刪除-->
-    <!--      </button>-->
-    <!--      <button (click)="toggleLock()">-->
-    <!--        <i class="fa" [class.fa-lock]="!selectedNode.locked" [class.fa-unlock]="selectedNode.locked"></i>-->
-    <!--        {{ selectedNode.locked ? '解鎖' : '鎖定' }}-->
-    <!--      </button>-->
-    <!--      <button (click)="linkNode()">-->
-    <!--        <i class="fa fa-link"></i> 關聯-->
-    <!--      </button>-->
-    <!--      <button (click)="highlightSimilarNodes()">-->
-    <!--        <i class="fa fa-search"></i> 查找同名-->
-    <!--      </button>-->
-    <!--    </div>-->
-
     <div class="reports-section" *ngIf="selectedNode.reports && selectedNode.reports.length > 0">
       <h4>報告列表</h4>
       <ul class="reports-list">
@@ -121,22 +56,6 @@
               [disabled]="selectedNode.locked"
               class="p-button-warning">
       </button>
-      <!--      TODO demo disabled-->
-      <!--      <button pButton-->
-      <!--        type="button"-->
-      <!--        label="取消關聯"-->
-      <!--        (click)="unlinkNode()"-->
-      <!--        [disabled]="!selectedNode"-->
-      <!--        class="p-button-warning">-->
-      <!--      </button>-->
-      <!--      <button pButton-->
-      <!--        type="button"-->
-      <!--        label="查詢關聯"-->
-      <!--        (click)="queryLinkedNodes()"-->
-      <!--        [disabled]="!selectedNode"-->
-      <!--        [class.p-button-success]="!isQueryingLinks"-->
-      <!--        [class.p-button-danger]="isQueryingLinks">-->
-      <!--      </button>-->
     </div>
   </div>
 </div>

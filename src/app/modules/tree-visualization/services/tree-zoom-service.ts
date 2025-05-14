@@ -20,7 +20,7 @@ export class TreeZoomService {
         this.svg = svg;
         this.g = g;
         this.zoom = d3.zoom()
-            .scaleExtent([0.3, 2]) // 调整缩放范围
+            .scaleExtent([0.3, 2]) // 調整縮放比例範圍
             .on('zoom', (event) => {
                 this.g.attr('transform', event.transform);
                 this.treeDataService.updateTreeState({
@@ -32,7 +32,7 @@ export class TreeZoomService {
                 });
             });
 
-        // 将缩放行为应用到SVG
+        // 將縮放行為套用到svg
         this.svg.call(this.zoom);
     }
 
@@ -45,22 +45,22 @@ export class TreeZoomService {
         this.svgWidth = svgWidth;
         this.svgHeight = svgHeight;
 
-        // 获取所有节点的边界
+        // 取得所有節點邊界
         const bounds = this.g.node().getBBox();
 
-        // 考虑节点的实际大小和边距
+        // 微調節點的實際大小和間距
         const padding = 50;
         const effectiveWidth = bounds.width + nodeWidth + padding * 2;
         const effectiveHeight = bounds.height + nodeHeight + padding * 2;
 
-        // 计算适当的缩放比例
+        // 設定縮放比例，確保所有節點可視
         const scale = Math.min(
             (svgWidth - padding * 2) / effectiveWidth,
             (svgHeight - padding * 2) / effectiveHeight,
             1.5
         );
 
-        // 计算居中位置，考虑节点的实际大小
+        // 計算置中對齊位置，微調節點的實際大小
         const translateX = (svgWidth - effectiveWidth * scale) / 2 - (bounds.x - padding) * scale;
         const translateY = (svgHeight - effectiveHeight * scale) / 2 - (bounds.y - padding) * scale;
 

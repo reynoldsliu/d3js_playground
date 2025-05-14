@@ -20,18 +20,6 @@ export interface TreeNode {
 
 }
 
-// 樹狀操作類型
-export enum TreeActionType {
-  SELECT_NODE = 'select_node',
-  ADD_NODE = 'add_node',
-  EDIT_NODE = 'edit_node',
-  DELETE_NODE = 'delete_node',
-  LOCK_NODE = 'lock_node',
-  UNLOCK_NODE = 'unlock_node',
-  LINK_NODES = 'link_nodes',
-  UNLINK_NODES = 'unlink_nodes'
-}
-
 // 樹狀視圖狀態
 export interface TreeState {
   selectedNodeId?: string;

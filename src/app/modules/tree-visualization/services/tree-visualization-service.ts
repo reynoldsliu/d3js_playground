@@ -74,15 +74,6 @@ export class TreeVisualizationService implements OnDestroy {
     // 獲取樹的高度 (root.height 是最長路徑上的邊數，+1 得到節點數)
     const treeHeight = root.height + 1;
 
-    // 調試信息
-    console.log('Tree height calculation:', {
-      dataProvided: !!data,
-      rootHeight: root.height,
-      calculatedHeight: treeHeight,
-      nodesCount: root.descendants().length,
-      rootData: root.data
-    });
-
     // 返回實際的樹高度
     return treeHeight;
   }
@@ -204,9 +195,6 @@ export class TreeVisualizationService implements OnDestroy {
       ]
     } as TreeNode;
   }
-
-  public performAction(): void {
-  } // TODO
 
   public initializeTree(data: TreeNode | undefined) {
     if (data) {
@@ -533,9 +521,6 @@ export class TreeVisualizationService implements OnDestroy {
         // return a.parent === b.parent ? 1 : 1.2; TODO
       });
 
-    // Store the calculated spacing for future reference
-    // this.horizontalNodeSpacing = horizontalSpacing;
-
     // Return the configured tree layout
     return treeLayout;
   }
@@ -562,46 +547,45 @@ export class TreeVisualizationService implements OnDestroy {
     }
   }
 
-  // TODO 處理節點點擊事件
   private handleNodeClick(event: any, d: d3.HierarchyNode<unknown>) {
     event.stopPropagation();
     const nodeData = d.data as TreeNode;
     const nodeId = nodeData.id;
 
     if (nodeId) {
-      // 获取当前的变换状态
+      // 取得目前變化狀態
       const currentTransform = d3.zoomTransform(this.svg.node());
 
-      // 更新节点选择状态
+      // 更新節點選擇
       this.treeDataService.selectNode(nodeId);
       this.treeStyleService.updateNodeStyles(this.nodes, nodeId, nodeData.name);
 
-      // 恢复之前的变换状态，防止画面移动
+      // 恢復之前的變化狀態，防止移動
       this.svg.call(this.treeZoomService.zoom.transform, currentTransform);
     }
   }
 
   updateView(data: TreeNode): void {
-    // 保存当前的变换状态
+    // 保存目前的變化狀態
     const currentTransform = this.svg && this.svg.node() ?
       d3.zoomTransform(this.svg.node()) :
       d3.zoomIdentity.translate(this.svgWidth / 2, this.nodeHeight * 2).scale(1);
 
-    // 清除当前视图
+    // 清除目前視圖
     if (this.svg) {
       this.svg.selectAll('*').remove();
     }
 
-    // 使用新数据重新初始化树
+    // 重新初始化樹
     this.initializeTree(data);
 
-    // 重新设置缩放行为
+    // 重設縮放
     this.treeZoomService.setupZoom(this.svg, this.g);
 
-    // 恢复之前的变换状态
+    // 恢復變化狀態
     this.svg.call(this.treeZoomService.zoom.transform, currentTransform);
 
-    // 如果有选中的节点，恢复其选中状态
+    // 若有選中節點，恢復其選中狀態
     const selectedNodeId = this.treeDataService.getSelectedNodeId();
     if (selectedNodeId) {
       const selectedNode = this.treeDataService.getSelectedNode();
@@ -616,37 +600,37 @@ export class TreeVisualizationService implements OnDestroy {
     const tree = d3.tree<TreeNode>().nodeSize([this.nodeWidth * 1.5, this.nodeHeight * 3]);
     tree(root);
 
-    // 计算树的边界，包含节点的实际大小
+    // 計算樹的邊界，包含節點實際大小
     let minX = Infinity;
     let maxX = -Infinity;
     let minY = Infinity;
     let maxY = -Infinity;
 
     root.each((d: any) => {
-      // 考虑节点的实际大小
+      // 微調節點的實際大小
       minX = Math.min(minX, d.x - this.nodeWidth / 2);
       maxX = Math.max(maxX, d.x + this.nodeWidth / 2);
       minY = Math.min(minY, d.y - this.nodeHeight / 2);
       maxY = Math.max(maxY, d.y + this.nodeHeight / 2);
     });
 
-    // 添加边距以确保节点不会贴边
+    // 增加邊框間距
     const padding = 50;
     const treeWidth = maxX - minX + padding * 2;
     const treeHeight = maxY - minY + padding * 2;
 
-    // 计算适当的缩放比例，确保所有节点可见
+    // 設定縮放比例，確保所有節點可視
     const scale = Math.min(
       (this.svgWidth - padding * 2) / treeWidth,
       (this.svgHeight - padding * 2) / treeHeight,
-      1.5 // 限制最大缩放比例为1.5
+      1.5 // 限制最大縮放比例為1.5
     );
 
-    // 计算居中位置
+    // 計算置中對齊位置
     const translateX = (this.svgWidth - treeWidth * scale) / 2 - minX * scale;
     const translateY = (this.svgHeight - treeHeight * scale) / 2 - minY * scale;
 
-    // 创建新的变换
+    // 建立新的變換
     const newTransform = d3.zoomIdentity
       .translate(translateX, translateY)
       .scale(scale);
@@ -663,7 +647,7 @@ export class TreeVisualizationService implements OnDestroy {
       .style('stroke-width', this.styles.link.strokeWidth)
       .style('opacity', 0);
 
-    // 更新连接线，使用平滑过渡
+    // 更新連接線，使用平滑過渡
     linkUpdate.merge(linkEnter)
       .transition()
       .duration(750)
@@ -717,7 +701,7 @@ export class TreeVisualizationService implements OnDestroy {
 
     const noteIcons = this.treeTooltipService.updateTooltip(this.nodes);
 
-    // 应用新的变换，使用过渡动画
+    // 套用新變換，動畫過渡
     this.svg.transition()
       .duration(750)
       .call(this.treeZoomService.zoom.transform, newTransform);

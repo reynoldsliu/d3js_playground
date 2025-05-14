@@ -10,8 +10,8 @@ export class TreeDragDropService {
     // 拖放相關屬性
     private draggedNode: any = null;
     private dragOverNode: any = null;
-    private dragMode: 'reorder' | 'nest' = 'nest'; // 默認模式是放入目標節點下
-    private _dragMode: 'reorder' | 'nest' = 'nest'; // 默認模式是放入目標節點下
+    private dragMode: 'reorder' | 'nest' = 'nest'; // 預設模式是放入目標節點下
+    private _dragMode: 'reorder' | 'nest' = 'nest'; // 預設模式是放入目標節點下
 
     // 拖放完成事件
     private dragDropCompletedSubject = new Subject<{
@@ -28,40 +28,32 @@ export class TreeDragDropService {
     // 設置拖放模式的方法
     setDragMode(mode: 'reorder' | 'nest'): void {
         this._dragMode = mode;
-        console.log('Drag mode set to:', mode);
     }
 
     // 拖動開始
     dragStarted(event: any, d: any): void {
-        console.log('dragStarted:', d);
 
         // 防止拖動根節點
         if (!d.parent) {
-            console.log('Cannot drag root node');
             return;
         }
 
         // 存儲被拖動的節點
         this.draggedNode = d;
-        console.log('Dragged node set:', this.draggedNode);
 
         // 保存初始位置
         this.draggedNode.originalX = d.x;
         this.draggedNode.originalY = d.y;
-        console.log('Original position:', {x: d.x, y: d.y});
 
         // 添加拖動樣式
         const nodeElement = event.sourceEvent.target.closest('.node');
-        console.log('Node element:', nodeElement);
 
         if (nodeElement) {
             d3.select(nodeElement)
                 .classed('dragging', true)
                 .raise();
-            console.log('Added dragging class');
         }
 
-        // 阻止默認行為
         event.sourceEvent.preventDefault();
         event.sourceEvent.stopPropagation();
     }
@@ -69,7 +61,6 @@ export class TreeDragDropService {
 // 拖動過程
     dragging(event: any, d: any): void {
         if (!this.draggedNode) {
-            console.log('No dragged node in dragging event');
             return;
         }
 
@@ -81,11 +72,9 @@ export class TreeDragDropService {
 
             d3.select(nodeElement)
                 .attr('transform', `translate(${this.draggedNode.x + dx}, ${this.draggedNode.y + dy})`);
-
-            console.log('Updated drag position:', {x: this.draggedNode.x + dx, y: this.draggedNode.y + dy});
         }
 
-        // 清除所有高亮
+        // 清除所有突出顯示
         d3.selectAll('.node')
             .classed('drag-over-nest', false)
             .classed('drag-over-reorder', false);
@@ -93,7 +82,6 @@ export class TreeDragDropService {
         // 獲取當前鼠標坐標
         const mouseX = event.sourceEvent.clientX;
         const mouseY = event.sourceEvent.clientY;
-        console.log('Mouse position:', {mouseX, mouseY});
 
         // 獲取所有節點並檢查哪個與鼠標位置最接近
         let closestNode = undefined;
@@ -101,7 +89,6 @@ export class TreeDragDropService {
 
         // 獲取所有節點元素
         const allNodes = document.querySelectorAll('.node');
-        console.log('Found nodes:', allNodes.length);
 
         allNodes.forEach(node => {
             if (node === nodeElement) {
@@ -118,8 +105,6 @@ export class TreeDragDropService {
                 Math.pow(mouseY - centerY, 2)
             );
 
-            console.log(`Node ${node.id} distance:`, distance);
-
             // 如果鼠標在節點區域內或者是最近的節點
             if (distance < minDistance) {
                 minDistance = distance;
@@ -129,7 +114,6 @@ export class TreeDragDropService {
 
         // 如果距離在閾值內，視為找到目標節點
         if (closestNode && minDistance < 50) { // 50px閾值，可調整
-            console.log('Found closest node:', (closestNode as TreeNode).id, 'distance:', minDistance);
 
             const targetNodeId = (closestNode as TreeNode).id.replace('node-', '');
             const targetData = this.treeDataService.findNodeById(targetNodeId);
@@ -145,7 +129,7 @@ export class TreeDragDropService {
 
                 // 根據模式添加不同的視覺提示
                 if (this.dragOverNode) {
-                    // 根據模式設置高亮樣式
+                    // 根據模式設置突出顯示樣式
                     d3.select(closestNode).classed(
                         this.dragMode === 'reorder' ? 'drag-over-reorder' : 'drag-over-nest',
                         true
@@ -154,7 +138,6 @@ export class TreeDragDropService {
 
             }
         } else {
-            console.log('No valid target found within threshold');
             this.dragOverNode = null;
         }
     }
@@ -162,7 +145,6 @@ export class TreeDragDropService {
 // 拖動結束
     dragEnded(event: any, d: any): void {
         if (!this.draggedNode) {
-            console.log('No dragged node in dragEnded');
             return;
         }
 
@@ -172,11 +154,8 @@ export class TreeDragDropService {
             .classed('drag-over-nest', false)
             .classed('drag-over-reorder', false);
 
-        console.log('Drag ended, dragOverNode:', this.dragOverNode);
-
         // 處理節點移動
         if (this.dragOverNode) {
-            console.log('Processing drop with mode:', this.dragMode);
 
             // 根據不同模式觸發不同的操作
             if (this.dragMode === 'reorder') {
@@ -219,6 +198,4 @@ export class TreeDragDropService {
         this.draggedNode = null;
         this.dragOverNode = null;
     }
-
-
 }

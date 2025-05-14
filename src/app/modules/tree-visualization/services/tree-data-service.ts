@@ -21,7 +21,6 @@ export class TreeDataService {
   treeState$ = this.treeStateSubject.asObservable();
 
   constructor() {
-
   }
 
   // 載入初始數據
@@ -93,7 +92,6 @@ export class TreeDataService {
 
   // 新增關聯
   addNode(parentId: string | null, newNode: TreeNode): void {
-    console.log('addNode called:', {parentId, newNode});
     const currentData = this.treeDataSubject.getValue();
     if (!currentData) {
       return;
@@ -169,12 +167,10 @@ export class TreeDataService {
 
   // 刪除節點
   deleteNode(nodeId: string): void {
-    // TODO: 實現刪除節點邏輯
     const currentData = this.treeDataSubject.getValue();
     if (!currentData) {
       return;
     }
-
     // 不允許刪除根節點
     if (currentData.id === nodeId) {
       console.warn('無法刪除根節點');
@@ -196,16 +192,16 @@ export class TreeDataService {
     }
 
     const parentNode = this.getNodeByIdRecursion(newData, targetNode.parentId);
-    if (parentNode && parentNode.children) {
+    if (parentNode && parentNode.children && parentNode.children.length > 1) {
       // 暫存被移除的節點
       const deletedNode = parentNode.children.filter(node => node.id === nodeId);
+      // 從父節點的子節點列表中移除該節點
+      parentNode.children = parentNode.children.filter(node => node.id !== nodeId);
       // 將被移除的節點新增回提案底下
       if (!newData.children) {
         newData.children = [];
       }
       newData.children.push(...deletedNode);
-      // 從父節點的子節點列表中移除該節點
-      parentNode.children = parentNode.children.filter(node => node.id !== nodeId);
 
       // optional: 如果父節點的子節點為空，可以考慮移除children屬性
       if (parentNode.children.length === 0) {
@@ -219,39 +215,18 @@ export class TreeDataService {
     }
   }
 
-  // 鎖定/解鎖節點
-  toggleLockNode(nodeId: string, locked: boolean): void {
-    // TODO: 實現鎖定/解鎖邏輯
-    const currentData = this.treeDataSubject.getValue();
-    if (!currentData) {
-      return;
-    }
-    const newData = this.deepCloneTree(currentData);
-    const targetNode = this.getNodeByIdRecursion(newData, nodeId);
-    if (targetNode) {
-      targetNode.locked = locked;
-    }
-    // 發出更新後的樹
-    this.treeDataSubject.next(newData);
-  }
-
   // 移動節點 - 根據模式決定操作
   moveNode(sourceId: string, targetId: string, mode: 'reorder' | 'nest' = 'nest'): void {
-    console.log('moveNode called:', {sourceId, targetId, mode});
 
     if (mode === 'reorder') {
-      console.log('Using reorderNode');
       this.reorderNode(sourceId, targetId);
     } else {
-      console.log('Using nestNode');
       this.nestNode(sourceId, targetId);
     }
   }
 
 // 重新排序節點
-  // 完成 reorderNode 方法
   private reorderNode(sourceId: string, targetId: string): void {
-    console.log('reorderNode:', {sourceId, targetId});
 
     const currentData = this.treeDataSubject.getValue();
     if (!currentData) {
@@ -260,27 +235,15 @@ export class TreeDataService {
     }
 
     const newData = this.deepCloneTree(currentData);
-    console.log('Data cloned');
 
     // 找到源節點和目標節點
     const sourceNode = this.getNodeByIdRecursion(newData, sourceId);
     const targetNode = this.getNodeByIdRecursion(newData, targetId);
 
-    console.log('Found nodes:', {
-      sourceFound: !!sourceNode,
-      targetFound: !!targetNode
-    });
-
     if (!sourceNode || !targetNode) {
       console.error('Source or target node not found');
       return;
     }
-
-    // 檢查父節點
-    console.log('Parent IDs:', {
-      sourceParent: sourceNode.parentId,
-      targetParent: targetNode.parentId
-    });
 
     // 確保兩者有相同的父節點
     if (sourceNode.parentId !== targetNode.parentId) {
@@ -307,21 +270,16 @@ export class TreeDataService {
       return;
     }
 
-    console.log('Swapping nodes at indices:', {sourceIndex, targetIndex});
-
     // 交換位置
     [parentNode.children[sourceIndex], parentNode.children[targetIndex]] =
       [parentNode.children[targetIndex], parentNode.children[sourceIndex]];
 
     // 發出更新後的樹數據
     this.treeDataSubject.next(newData);
-    console.log('Tree data updated after reordering nodes');
   }
 
 // 嵌套節點
-  // 完成 nestNode 方法
   private nestNode(sourceId: string, targetId: string): void {
-    console.log('nestNode:', {sourceId, targetId});
 
     const currentData = this.treeDataSubject.getValue();
     if (!currentData) {
@@ -330,18 +288,10 @@ export class TreeDataService {
     }
 
     const newData = this.deepCloneTree(currentData);
-    console.log('Data cloned');
 
     // 找到源節點和目標節點
     const sourceNode = this.getNodeByIdRecursion(newData, sourceId);
     const targetNode = this.getNodeByIdRecursion(newData, targetId);
-
-    console.log('Found nodes:', {
-      sourceFound: !!sourceNode,
-      targetFound: !!targetNode,
-      sourceData: sourceNode,
-      targetData: targetNode
-    });
 
     if (!sourceNode || !targetNode) {
       console.error('Source or target node not found');
@@ -356,7 +306,6 @@ export class TreeDataService {
 
     // 檢查是否已經是目標節點的子節點
     if (sourceNode.parentId === targetId) {
-      console.log('Node is already a child of the target node');
       return;
     }
 
@@ -364,10 +313,7 @@ export class TreeDataService {
     if (sourceNode.parentId) {
       const oldParent = this.getNodeByIdRecursion(newData, sourceNode.parentId);
       if (oldParent && oldParent.children) {
-        console.log('removing origin node from its parent');
         oldParent.children = oldParent.children.filter(child => child.id !== sourceId);
-        console.log(oldParent.children);
-        console.log(sourceId);
         // 如果父節點的子節點數組為空，可以刪除該屬性
         if (oldParent.children.length === 0) {
           delete oldParent.children;
@@ -400,7 +346,6 @@ export class TreeDataService {
 
     // 發出更新後的樹數據
     this.treeDataSubject.next(newData);
-    console.log('Tree data updated after nesting node');
   }
 
 // 檢查節點是否是另一個節點的後代
@@ -474,7 +419,7 @@ export class TreeDataService {
   }
 
   private collectNodesByName(node: TreeNode, matchName: string, result: TreeNode[]): void {
-    // 檢查當前節點名稱是否匹配
+    // 檢查當前節點名稱是否相同
     if (node.name === matchName) {
       result.push(node);
     }
@@ -495,7 +440,7 @@ export class TreeDataService {
     }
   }
 
-// 深拷貝樹
+// 深複製
   deepCloneTree(node: TreeNode): TreeNode {
     const clone = {...node};
     if (node.children) {

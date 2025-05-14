@@ -28,7 +28,7 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
   private treeDataSubscription: Subscription | undefined;
   private dragDropSubscription: Subscription | undefined;
 
-  public dragMode: 'reorder' | 'nest' = 'nest'; // 默認為嵌套模式
+  public dragMode: 'reorder' | 'nest' = 'nest'; // 預設為嵌套模式
   public data: TreeNode | null = null;
   selectedNode: TreeNode | null = null;
   hoveredNode: TreeNode | null = null;
@@ -173,7 +173,6 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
   createNode(): void {
     // Get the current tree height
     const currentTreeHeight = this.treeVisualizationService.getCurrentTreeHeight();
-    console.log('Current tree height before adding node:', currentTreeHeight);
 
     // Check if adding to an "額度" node
     if (this.selectedNode?.type === '額度') {
@@ -206,7 +205,7 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
       locked: false,
       selected: false,
       reports: [],
-      type: undefined, // 移除默認類型，讓用戶在對話框中選擇
+      type: undefined, // 移除類型，讓用戶在對話框中選擇
       amount: 0,
       note: ''
     };
@@ -222,7 +221,6 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
     });
 
     ref.onClose.subscribe((result: any) => {
-      console.log(result);
       if (result?.action === 'confirm') {
 
         // Only proceed if adding won't exceed tree height limit
@@ -244,7 +242,6 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
   }
 
   deleteNode(): void {
-    console.log('deleteNode called:');
     if (!this.selectedNode || !this.selectedNode.id) {
       return;
     }
@@ -291,29 +288,14 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
     });
   }
 
-  toggleLock(): void {
-    if (!this.selectedNode || !this.selectedNode.id) {
-      return;
-    }
-
-    // 鎖定/解鎖節點
-    const newLockedState = !this.selectedNode.locked;
-    this.treeDataService.toggleLockNode(this.selectedNode.id, newLockedState);
-  }
-
   showReports(): void {
     if (!this.selectedNode || !this.selectedNode.reports || this.selectedNode.reports.length === 0) {
       alert('此節點沒有報告');
       return;
     }
 
-    // 這裡你可以選擇如何顯示報告
-    // 方法1: 簡單地使用 alert 顯示報告列表
     const reportsList = this.selectedNode.reports.join('\n- ');
     alert(`${this.selectedNode.name} 的報告：\n- ${reportsList}`);
-
-    // 方法2: 如果你想實現更複雜的報告顯示，可以考慮使用模態對話框或側邊欄的詳細視圖
-    // this.openReportsModal(this.selectedNode.reports);
   }
 
   highlightSimilarNodes(): void {
@@ -324,7 +306,6 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
     // 查找同名節點
     const similarNodes = this.treeDataService.findNodesByName(this.selectedNode.name);
 
-    // 在視覺化服務中高亮這些節點
     if (this.selectedNode.id) {
       this.treeStyleService.highlightSimilarNodes(similarNodes, this.selectedNode.id);
     }
