@@ -98,8 +98,10 @@ export class TreeDataService {
     }
 
     const newData = this.deepCloneTree(currentData);
+    console.log(newData);
     if (parentId) {
       const targetNode = this.getNodeByIdRecursion(newData, parentId);
+      console.log(targetNode);
       if (targetNode) {
         // 初始化 children 陣列如果不存在
         if (!targetNode.children) {
@@ -194,14 +196,18 @@ export class TreeDataService {
     const parentNode = this.getNodeByIdRecursion(newData, targetNode.parentId);
     if (parentNode && parentNode.children && parentNode.children.length > 1) {
       // 暫存被移除的節點
-      const deletedNode = parentNode.children.filter(node => node.id === nodeId);
+      const deletedNode = parentNode.children.filter(node => node.id === nodeId)[0];
       // 從父節點的子節點列表中移除該節點
       parentNode.children = parentNode.children.filter(node => node.id !== nodeId);
       // 將被移除的節點新增回提案底下
       if (!newData.children) {
         newData.children = [];
       }
-      newData.children.push(...deletedNode);
+      // TODO 需重構邏輯
+      const addBackDeletedNode = this.findNodeById(deletedNode.id);
+      if (!addBackDeletedNode) {
+        newData.children.push(deletedNode);
+      }
 
       // optional: 如果父節點的子節點為空，可以考慮移除children屬性
       if (parentNode.children.length === 0) {

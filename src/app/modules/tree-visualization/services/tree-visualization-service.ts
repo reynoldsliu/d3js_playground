@@ -90,7 +90,7 @@ export class TreeVisualizationService implements OnDestroy {
   public loadTreeData(): TreeNode {
     return {
       id: '1',
-      name: '三雅投資股份有限公司',
+      name: '艾蕙服飾開發有限公司',
       level: 0,
       children: [
         {
@@ -102,7 +102,7 @@ export class TreeVisualizationService implements OnDestroy {
           selected: false,
           reports: [],
           type: '額度',
-          amount: 500000000, // 5億
+          amount: 2000, // 5億
           state: '新增',
           children: []
         },
@@ -115,7 +115,7 @@ export class TreeVisualizationService implements OnDestroy {
           selected: false,
           reports: [],
           type: '合控',
-          amount: 150000000, // 1.5億
+          amount: 500, // 1.5億
           note: '備註測試',
           children: [
             {
@@ -127,7 +127,7 @@ export class TreeVisualizationService implements OnDestroy {
               selected: false,
               reports: [],
               type: '額度',
-              amount: 200000000, // 2億
+              amount: 1000, // 2億
               state: '新增',
               children: []
             }
@@ -142,7 +142,7 @@ export class TreeVisualizationService implements OnDestroy {
           selected: false,
           reports: [],
           type: '合控',
-          amount: 200000000, // 2億
+          amount: 1300, // 2億
           children: [{
             id: '6',
             name: 'P250005',
@@ -152,7 +152,7 @@ export class TreeVisualizationService implements OnDestroy {
             selected: false,
             reports: [],
             type: '額度',
-            amount: 500000000, // 5億
+            amount: 1000, // 5億
             state: '既有',
             children: []
           }, {
@@ -164,7 +164,7 @@ export class TreeVisualizationService implements OnDestroy {
             selected: false,
             reports: [],
             type: '合控',
-            amount: 200000000, // 2億
+            amount: 1000, // 2億
             children: [{
               id: '8',
               name: 'P250007',
@@ -174,7 +174,7 @@ export class TreeVisualizationService implements OnDestroy {
               selected: false,
               reports: [],
               type: '額度',
-              amount: 500000000, // 5億
+              amount: 700, // 5億
               state: '既有',
               children: []
             }, {
@@ -186,7 +186,7 @@ export class TreeVisualizationService implements OnDestroy {
               selected: false,
               reports: [],
               type: '額度',
-              amount: 500000000, // 5億
+              amount: 800, // 5億
               state: '既有',
               children: []
             }],
@@ -385,9 +385,8 @@ export class TreeVisualizationService implements OnDestroy {
     this.nodes.append('text')
       .attr('class', 'node-label')
       .attr('dy', '.15em')
-      .attr('x', 10)
-      .text((d: any) => d.data.name)
-      .style('fill-opacity', 1e-6);
+      .attr('x', 100)
+      .text((d: any) => d.data.name+'pppppp');
 
     // Add name text
     this.nodes.append('text')
