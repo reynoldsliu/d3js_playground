@@ -154,7 +154,22 @@ export class TreeVisualizationService implements OnDestroy {
             type: '額度',
             amount: 1000, // 5億
             state: '既有',
-            children: []
+            children: [
+              { // TODO duplicate
+                id: '8',
+                name: 'P250007',
+                parentId: '7',
+                level: 3,
+                locked: false,
+                selected: false,
+                reports: [],
+                type: '額度',
+                amount: 700, // 5億
+                state: '既有',
+                hasMultipleParents: true,
+                children: []
+              }
+            ]
           }, {
             id: '7',
             name: 'P250006',
@@ -176,6 +191,7 @@ export class TreeVisualizationService implements OnDestroy {
               type: '額度',
               amount: 700, // 5億
               state: '既有',
+              hasNultipleParents: true,
               children: []
             }, {
               id: '9',
@@ -241,29 +257,6 @@ export class TreeVisualizationService implements OnDestroy {
     this.g = this.svg.append('g')
       .attr('transform', `translate(${this.svgWidth / 2}, ${this.nodeHeight * 2})`);
 
-    // Create links
-    this.links = this.g.selectAll('.link')
-      .data(root.links())
-      .enter()
-      .append('path')
-      .attr('class', 'link')
-      .attr('d', (d: any) => {
-        const sourceX = d.source.x;
-        const sourceY = d.source.y;
-        const targetX = d.target.x;
-        const targetY = d.target.y;
-        const midY = (sourceY + targetY) / 2;
-
-        return `M${sourceX},${sourceY}
-                L${sourceX},${midY}
-                L${targetX},${midY}
-                L${targetX},${targetY}`;
-      })
-      .style('fill', 'none')
-      .style('stroke', this.styles.link.stroke)
-      .style('stroke-width', this.styles.link.strokeWidth)
-      .style('opacity', this.styles.link.opacity);
-
     // Create nodes
     this.nodes = this.g.selectAll('.node')
       .data(root.descendants())
@@ -289,6 +282,81 @@ export class TreeVisualizationService implements OnDestroy {
     //   .on('end', (event, d) => this.treeDragDropService.dragEnded(event, d))
     // ) // TODO disable drag-drop
     ;
+
+    const nodeMap = {};
+    for(const node of this.nodes.data()) {
+      // @ts-ignore
+      nodeMap[node.data.id] = node;
+    }
+    console.log(nodeMap);
+
+    // Create links
+    this.links = this.g.selectAll('.link')
+      .data(root.links())
+      .enter()
+      .append('path')
+      .attr('class', 'link')
+      .attr('d', (d: any) => {
+
+        const sourceX = d.source.x;
+        const sourceY = d.source.y;
+        const targetX = d.target.x;
+        const targetY = d.target.y;
+        const midY = (sourceY + targetY) / 2;
+
+        // @ts-ignore
+        const sourceNode = nodeMap[d.source.data.id as string];
+        // @ts-ignore
+        const targetNode = nodeMap[d.target.data.id as string];
+        console.log(sourceNode, targetNode);
+
+        // If it's a multi-parent link, add a curve
+        if (d.type === "parent1" || d.type === "parent2") {
+          // Create curved path with different offsets
+          const offset = d.type === "parent1" ? -30 : 30;
+          return `
+                    M ${sourceNode.x},${sourceNode.y}
+                    C ${sourceNode.x},${(sourceNode.y + targetNode.y) / 2 + offset}
+                      ${targetNode.x},${(sourceNode.y + targetNode.y) / 2 + offset}
+                      ${targetNode.x},${targetNode.y}
+                `;
+        } else {
+          // Simple straight line with slight curve
+          return `
+                    M ${sourceNode.x},${sourceNode.y}
+                    C ${sourceNode.x},${(sourceNode.y + targetNode.y) / 2}
+                      ${targetNode.x},${(sourceNode.y + targetNode.y) / 2}
+                      ${targetNode.x},${targetNode.y}
+                `;
+        }
+      })
+      .style('fill', 'none')
+      .style('stroke', this.styles.link.stroke)
+      .style('stroke-width', this.styles.link.strokeWidth)
+      .style('opacity', this.styles.link.opacity);
+
+    // // Create links
+    // this.links = this.g.selectAll('.link')
+    //   .data(root.links())
+    //   .enter()
+    //   .append('path')
+    //   .attr('class', 'link')
+    //   .attr('d', (d: any) => {
+    //     const sourceX = d.source.x;
+    //     const sourceY = d.source.y;
+    //     const targetX = d.target.x;
+    //     const targetY = d.target.y;
+    //     const midY = (sourceY + targetY) / 2;
+    //
+    //     return `M${sourceX},${sourceY}
+    //             L${sourceX},${midY}
+    //             L${targetX},${midY}
+    //             L${targetX},${targetY}`;
+    //   })
+    //   .style('fill', 'none')
+    //   .style('stroke', this.styles.link.stroke)
+    //   .style('stroke-width', this.styles.link.strokeWidth)
+    //   .style('opacity', this.styles.link.opacity);
 
     // Add rectangles
     this.nodes.append('rect')
@@ -386,7 +454,7 @@ export class TreeVisualizationService implements OnDestroy {
       .attr('class', 'node-label')
       .attr('dy', '.15em')
       .attr('x', 100)
-      .text((d: any) => d.data.name+'pppppp');
+      .text((d: any) => d.data.name + 'pppppp');
 
     // Add name text
     this.nodes.append('text')

@@ -17,7 +17,7 @@ export interface TreeNode {
   state?: string;
   note?: string;           // 備註內容
   linkedNodes?: string[];
-
+  hasMultipleParents?: boolean;
 }
 
 // 樹狀視圖狀態
