@@ -1,4 +1,19 @@
 <div class="app-container">
-  <h1>公司關係樹狀圖</h1>
-  <app-tree-visualization></app-tree-visualization>
+  <div class="card flex justify-center">
+    <div class="flex flex-col gap-4">
+      <div *ngFor="let category of categories" class="field-checkbox">
+        <p-radioButton [inputId]="category.key" name="category" [value]="category" [(ngModel)]="selectedCategory"
+        (click)="onCategoryChange(category)"/>
+        <label [for]="category.key" class="ml-2">{{ category.name }}</label>
+      </div>
+    </div>
+  </div>
+  <div *ngIf="selectedCategory === 'tree'">
+    <h1>公司關係樹狀圖</h1>
+    <app-tree-visualization></app-tree-visualization>
+  </div>
+  <div *ngIf="selectedCategory === 'force'">
+    <h1>公司關係力圖</h1>
+    <app-force-directed-tree></app-force-directed-tree>
+  </div>
 </div>

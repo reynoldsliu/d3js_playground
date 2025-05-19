@@ -19,6 +19,8 @@ import {TreeDataService} from './modules/tree-visualization/services/tree-data-s
 
 // 導入樹狀視覺化模組
 import { TreeVisualizationModule } from './modules/tree-visualization/tree-visualization.module';
+import {ForceDirectedTreeModule} from './modules/force-directed-tree/force-directed-tree.module';
+import {RadioButtonModule} from 'primeng/radiobutton';
 
 /**
  * 應用程式根模組
@@ -41,7 +43,9 @@ import { TreeVisualizationModule } from './modules/tree-visualization/tree-visua
     DropdownModule,
     InputNumberModule,
     AppRoutingModule,
-    TreeVisualizationModule
+    TreeVisualizationModule,
+    ForceDirectedTreeModule,
+    RadioButtonModule
   ],
   providers: [TreeVisualizationService,
   TreeDataService],
