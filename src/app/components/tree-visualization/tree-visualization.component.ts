@@ -200,7 +200,7 @@ export class TreeVisualizationComponent implements OnInit, AfterViewInit, OnDest
     const newNode: TreeNode = {
       id: this.treeDataService.generateUniqueId(),
       name: '',
-      parentId: this.selectedNode?.id || null,
+      parentId: this.selectedNode?.id?[this.selectedNode.id]:[],
       level: this.selectedNode ? (this.selectedNode.level || 0) + 1 : 0,
       locked: false,
       selected: false,

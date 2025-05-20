@@ -11,7 +11,8 @@ export class AppComponent {
 
   categories: any[] = [
     { name: '樹狀圖', key: 'tree' },
-    { name: '力圖', key: 'force' }
+    { name: '力圖', key: 'force' },
+    { name: '混合圖', key: 'mix' },
   ];
 
   constructor() {}

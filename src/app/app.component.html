@@ -20,4 +20,8 @@
     <h1>公司關係力圖</h1>
     <app-force-directed-tree></app-force-directed-tree>
   </div>
+  <div *ngIf="selectedCategory === 'mix'">
+    <h1>公司關係混合圖</h1>
+    <app-mix-tree-force></app-mix-tree-force>
+  </div>
 </div>

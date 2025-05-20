@@ -96,7 +96,7 @@ export class TreeVisualizationService implements OnDestroy {
         {
           id: '2',
           name: 'P250001',
-          parentId: '1',
+          parentId: ['1'],
           level: 1,
           locked: false,
           selected: false,
@@ -109,7 +109,7 @@ export class TreeVisualizationService implements OnDestroy {
         {
           id: '3',
           name: 'P250002',
-          parentId: '1',
+          parentId: ['1'],
           level: 1,
           locked: false,
           selected: false,
@@ -121,7 +121,7 @@ export class TreeVisualizationService implements OnDestroy {
             {
               id: '5',
               name: 'P250003',
-              parentId: '3',
+              parentId: ['3'],
               level: 2,
               locked: false,
               selected: false,
@@ -136,7 +136,7 @@ export class TreeVisualizationService implements OnDestroy {
         {
           id: '4',
           name: 'P250004',
-          parentId: '1',
+          parentId: ['1'],
           level: 1,
           locked: false,
           selected: false,
@@ -146,7 +146,7 @@ export class TreeVisualizationService implements OnDestroy {
           children: [{
             id: '6',
             name: 'P250005',
-            parentId: '1',
+            parentId: ['1'],
             level: 2,
             locked: false,
             selected: false,
@@ -158,7 +158,7 @@ export class TreeVisualizationService implements OnDestroy {
               { // TODO duplicate
                 id: '8',
                 name: 'P250007',
-                parentId: '7',
+                parentId: ['6','7'],
                 level: 3,
                 locked: false,
                 selected: false,
@@ -171,7 +171,7 @@ export class TreeVisualizationService implements OnDestroy {
               },{ // TODO duplicate
                 id: '9',
                 name: 'P250008',
-                parentId: '7',
+                parentId: ['6','7'],
                 level: 3,
                 locked: false,
                 selected: false,
@@ -186,40 +186,14 @@ export class TreeVisualizationService implements OnDestroy {
           }, {
             id: '7',
             name: 'P250006',
-            parentId: '4',
+            parentId: ['4'],
             level: 2,
             locked: false,
             selected: false,
             reports: [],
             type: '合控',
             amount: 1000, // 2億
-            children: [{
-              id: '8',
-              name: 'P250007',
-              parentId: '7',
-              level: 3,
-              locked: false,
-              selected: false,
-              reports: [],
-              type: '額度',
-              amount: 700, // 5億
-              state: '既有',
-              hasMultipleParents: true,
-              children: []
-            }, {
-              id: '9',
-              name: 'P250008',
-              parentId: '7',
-              level: 3,
-              locked: false,
-              selected: false,
-              reports: [],
-              type: '額度',
-              amount: 800, // 5億
-              state: '既有',
-              hasMultipleParents: true,
-              children: []
-            }],
+            children: [],
           }],
         }
       ]
@@ -227,17 +201,22 @@ export class TreeVisualizationService implements OnDestroy {
   }
 
   public initializeTree(data: TreeNode | undefined) {
-    if (data) {
-      this.treeDataService.loadInitialData(data);
+    if (!data) {
+      return null;
     }
 
-    const root = d3.hierarchy(data) as HierarchyNode<unknown>;
-    // const tree = d3.tree().nodeSize([this.nodeWidth * 1.5, this.nodeHeight * 3]);
-    let tree;
-    if (data) {
-      tree = this.calculateOptimalNodeSpacing(data);
-      tree(root);
-    }
+    // Pre-process the data to handle connections and multi-parent relationships
+    const processedData = this.preprocessTreeData(data);
+
+    // Load the processed data
+    this.treeDataService.loadInitialData(processedData);
+
+    // Create the hierarchy
+    const root = d3.hierarchy(processedData) as HierarchyNode<unknown>;
+
+    // Calculate optimal node spacing and apply tree layout
+    let tree = this.calculateOptimalNodeSpacing(processedData);
+    tree(root);
 
     // Hide children initially if collapsed property is true
     root.descendants().forEach((d: any) => {
@@ -247,14 +226,14 @@ export class TreeVisualizationService implements OnDestroy {
       }
     });
 
-    // 初始化tooltip
-    const tooltip =
-      this.treeTooltipService.initializeTooltip(this.styles.tooltip,
-        this.svgWidth,
-        this.svgHeight,
-        this.nodeWidth,
-        this.nodeHeight,
-      );
+    // Initialize tooltip
+    const tooltip = this.treeTooltipService.initializeTooltip(
+      this.styles.tooltip,
+      this.svgWidth,
+      this.svgHeight,
+      this.nodeWidth,
+      this.nodeHeight
+    );
 
     // Create SVG
     this.svg = d3.select('.tree-visualization')
@@ -267,10 +246,9 @@ export class TreeVisualizationService implements OnDestroy {
         this.treeDataService.selectNode(null);
       });
 
-    // Create a group with margin
+    // Create a group with margin for horizontal layout
     this.g = this.svg.append('g')
-      .attr('transform', `translate(${this.nodeHeight * 2}, ${this.svgHeight / 2})`)
-      // .attr('transform', `translate(${this.svgWidth / 2}, ${this.nodeHeight * 2})`);
+      .attr('transform', `translate(${this.nodeHeight * 2}, ${this.svgHeight / 2})`);
 
     // Create nodes
     this.nodes = this.g.selectAll('.node')
@@ -279,106 +257,226 @@ export class TreeVisualizationService implements OnDestroy {
       .append('g')
       .attr('class', (d: { data: TreeNode; }) => {
         const nodeData = d.data as TreeNode;
-        return `node ${nodeData.selected ? 'selected' : ''} ${nodeData.locked ? 'locked' : ''}`;
+        let classes = 'node';
+        if (nodeData.selected) classes += ' selected';
+        if (nodeData.locked) classes += ' locked';
+        if (nodeData.hasMultipleParents) classes += ' multi-parent';
+        return classes;
       })
       .attr('id', (d: { data: TreeNode; }) => {
         const nodeData = d.data as TreeNode;
         return `node-${nodeData.id}`;
       })
       .attr('transform', (d: { x: any; y: any; }) => `translate(${d.y},${d.x})`)
-      // .attr('transform', (d: { x: any; y: any; }) => `translate(${d.x},${d.y})`)
       .style('cursor', 'grab')
-      .style('pointer-events', 'all')  // 確保元素能夠接收鼠標事件
+      .style('pointer-events', 'all')
       .on('click', (event: any, d: d3.HierarchyNode<unknown>) => this.handleNodeClick(event, d))
       .attr('draggable', true)
-      .attr('cursor', 'move')  // 改變滑鼠游標為移動指示器
-    // .call(d3.drag()
-    //   .on('start', (event, d) => this.treeDragDropService.dragStarted(event, d))
-    //   .on('drag', (event, d) => this.treeDragDropService.dragging(event, d))
-    //   .on('end', (event, d) => this.treeDragDropService.dragEnded(event, d))
-    // ) // TODO disable drag-drop
-    ;
+      .attr('cursor', 'move');
 
-    const nodeMap = {};
-    for(const node of this.nodes.data()) {
-      // @ts-ignore
-      nodeMap[node.data.id] = node;
-    }
-    console.log(nodeMap);
+    // Create a proper node map for looking up nodes by ID
+    const nodeMap = new Map<string, any>();
+    root.descendants().forEach(node => {
+      const nodeData = node.data as TreeNode;
+      nodeMap.set(nodeData.id, node);
+    });
 
-    // Create links
+    // Generate all links including primary parent-child and additional relationships
+    const allLinks = this.generateAllLinks(root, nodeMap);
+
+    // Create links with different styling based on type
     this.links = this.g.selectAll('.link')
-      .data(root.links())
+      .data(allLinks)
       .enter()
       .append('path')
-      .attr('class', 'link')
+      .attr('class', (d: any) => `link ${d.type || 'primary'}`)
       .attr('d', (d: any) => {
+        const source = d.source;
+        const target = d.target;
 
-        const sourceX = d.source.x;
-        const sourceY = d.source.y;
-        const targetX = d.target.x;
-        const targetY = d.target.y;
-        const midY = (sourceY + targetY) / 2;
+        // For horizontal layout:
+        const sourceX = source.x;
+        const sourceY = source.y;
+        const targetX = target.x;
+        const targetY = target.y;
 
-        // @ts-ignore
-        const sourceNode = nodeMap[d.source.data.id as string];
-        // @ts-ignore
-        const targetNode = nodeMap[d.target.data.id as string];
-        console.log(sourceNode, targetNode);
-        return `
-  M ${sourceNode.y},${sourceNode.x}
-  C ${(sourceNode.y + targetNode.y) / 2},${sourceNode.x}
-    ${(sourceNode.y + targetNode.y) / 2},${targetNode.x}
-    ${targetNode.y},${targetNode.x}
-`;
-        // // If it's a multi-parent link, add a curve
-        // if (d.type === "parent1" || d.type === "parent2") {
-        //   // Create curved path with different offsets
-        //   const offset = d.type === "parent1" ? -30 : 30;
-        //   return `
-        //             M ${sourceNode.x},${sourceNode.y}
-        //             C ${sourceNode.x},${(sourceNode.y + targetNode.y) / 2 + offset}
-        //               ${targetNode.x},${(sourceNode.y + targetNode.y) / 2 + offset}
-        //               ${targetNode.x},${targetNode.y}
-        //         `;
-        // } else {
-        //   // Simple straight line with slight curve
-        //   return `
-        //             M ${sourceNode.x},${sourceNode.y}
-        //             C ${sourceNode.x},${(sourceNode.y + targetNode.y) / 2}
-        //               ${targetNode.x},${(sourceNode.y + targetNode.y) / 2}
-        //               ${targetNode.x},${targetNode.y}
-        //         `;
-        // }
+        // Different path styles based on link type
+        if (d.type === 'related' || d.type === 'linked') {
+          // Curved path for related or linked nodes (not parent-child)
+          const horizontalOffset = 50;
+          return `
+          M ${sourceY},${sourceX}
+          C ${(sourceY + targetY) / 2 + horizontalOffset},${sourceX}
+            ${(sourceY + targetY) / 2 + horizontalOffset},${targetX}
+            ${targetY},${targetX}
+        `;
+        } else if (d.type === 'secondary-parent') {
+          // Dashed curved path for secondary parent relationships
+          return `
+          M ${sourceY},${sourceX}
+          C ${(sourceY + targetY) / 2 + 30},${sourceX}
+            ${(sourceY + targetY) / 2 + 30},${targetX}
+            ${targetY},${targetX}
+        `;
+        } else {
+          // Standard parent-child link with a gentle curve
+          return `
+          M ${sourceY},${sourceX}
+          C ${(sourceY + targetY) / 2},${sourceX}
+            ${(sourceY + targetY) / 2},${targetX}
+            ${targetY},${targetX}
+        `;
+        }
       })
       .style('fill', 'none')
-      .style('stroke', this.styles.link.stroke)
-      .style('stroke-width', this.styles.link.strokeWidth)
+      .style('stroke', (d: any) => {
+        // Color based on link type
+        switch(d.type) {
+          case 'related': return '#4caf50'; // Green for related links
+          case 'linked': return '#2196f3';  // Blue for linked nodes
+          case 'secondary-parent': return '#ff9800'; // Orange for multi-parent links
+          default: return this.styles.link.stroke; // Default for primary parent-child
+        }
+      })
+      .style('stroke-width', (d: any) => {
+        return d.type ? '2px' : this.styles.link.strokeWidth;
+      })
+      .style('stroke-dasharray', (d: any) => {
+        // Dashed lines for non-primary relationships
+        return (d.type === 'secondary-parent' || d.type === 'related' || d.type === 'linked')
+          ? '5,5' : 'none';
+      })
       .style('opacity', this.styles.link.opacity);
 
-    // // Create links
-    // this.links = this.g.selectAll('.link')
-    //   .data(root.links())
-    //   .enter()
-    //   .append('path')
-    //   .attr('class', 'link')
-    //   .attr('d', (d: any) => {
-    //     const sourceX = d.source.x;
-    //     const sourceY = d.source.y;
-    //     const targetX = d.target.x;
-    //     const targetY = d.target.y;
-    //     const midY = (sourceY + targetY) / 2;
-    //
-    //     return `M${sourceX},${sourceY}
-    //             L${sourceX},${midY}
-    //             L${targetX},${midY}
-    //             L${targetX},${targetY}`;
-    //   })
-    //   .style('fill', 'none')
-    //   .style('stroke', this.styles.link.stroke)
-    //   .style('stroke-width', this.styles.link.strokeWidth)
-    //   .style('opacity', this.styles.link.opacity);
+    // Add rectangles and node content
+    this.addNodeElements();
 
+    // Add tooltips
+    const noteIcons = this.treeTooltipService.genTooltip(this.nodes);
+
+    return this.svg.node();
+  }
+
+  /**
+   * Preprocess tree data to handle multi-parent and linked relationships
+   */
+  private preprocessTreeData(data: TreeNode): TreeNode {
+    // Make a deep copy to avoid modifying the original data
+    const processedData = JSON.parse(JSON.stringify(data));
+
+    // Track all nodes by ID for lookups
+    const nodeMap = new Map<string, TreeNode>();
+
+    // First pass: collect all nodes
+    const collectNodes = (node: TreeNode) => {
+      nodeMap.set(node.id, node);
+
+      if (node.children && node.children.length > 0) {
+        node.children.forEach(collectNodes);
+      }
+    };
+
+    collectNodes(processedData);
+
+    // Second pass: convert single parentId to array if needed
+    const normalizeParentIds = (node: TreeNode) => {
+      // Handle legacy single parentId
+      if (typeof node.parentId === 'string') {
+        node.parentId = [node.parentId];
+      }
+
+      // Ensure parentId is at least an empty array
+      if (!node.parentId) {
+        node.parentId = [];
+      }
+
+      // Mark nodes with multiple parents
+      if (node.parentId.length > 1) {
+        node.hasMultipleParents = true;
+      }
+
+      // Process children
+      if (node.children && node.children.length > 0) {
+        node.children.forEach(normalizeParentIds);
+      }
+    };
+
+    normalizeParentIds(processedData);
+
+    return processedData;
+  }
+
+  /**
+   * Generate all links including parent-child, multi-parent, and other relationships
+   */
+  private generateAllLinks(root: d3.HierarchyNode<unknown>, nodeMap: Map<string, any>): any[] {
+    // Start with the standard hierarchy links
+    const links = root.links().map(link => ({
+      source: link.source,
+      target: link.target,
+      type: 'primary'
+    }));
+
+    // Add additional links
+    root.descendants().forEach(node => {
+      const nodeData = node.data as TreeNode;
+
+      // Handle multi-parent relationships (secondary parents)
+      if (nodeData.parentId && nodeData.parentId.length > 1) {
+        // Skip the first parent (already handled by hierarchy links)
+        const secondaryParents = nodeData.parentId.slice(1);
+
+        secondaryParents.forEach(parentId => {
+          const parentNode = nodeMap.get(parentId);
+
+          if (parentNode) {
+            links.push({
+              source: parentNode,
+              target: node,
+              type: 'secondary-parent'
+            });
+          }
+        });
+      }
+
+      // Handle related nodes
+      if (nodeData.relatedTo && nodeData.relatedTo.length > 0) {
+        nodeData.relatedTo.forEach(relatedId => {
+          const relatedNode = nodeMap.get(relatedId);
+
+          if (relatedNode) {
+            links.push({
+              source: node,
+              target: relatedNode,
+              type: 'related'
+            });
+          }
+        });
+      }
+
+      // Handle linked nodes
+      if (nodeData.linkedNodes && nodeData.linkedNodes.length > 0) {
+        nodeData.linkedNodes.forEach(linkedId => {
+          const linkedNode = nodeMap.get(linkedId);
+
+          if (linkedNode) {
+            links.push({
+              source: node,
+              target: linkedNode,
+              type: 'linked'
+            });
+          }
+        });
+      }
+    });
+
+    return links;
+  }
+
+  /**
+   * Add rectangles and other visual elements to nodes
+   */
+  private addNodeElements() {
     // Add rectangles
     this.nodes.append('rect')
       .attr('width', this.nodeWidth)
@@ -405,6 +503,9 @@ export class TreeVisualizationService implements OnDestroy {
         if (nodeData.selected) {
           return this.styles.node.selected.stroke;
         }
+        if (nodeData.hasMultipleParents) {
+          return '#ff9800'; // Highlight multi-parent nodes
+        }
         if (nodeData.level === 0) {
           return this.styles.node.company.stroke;
         }
@@ -421,29 +522,24 @@ export class TreeVisualizationService implements OnDestroy {
         if (nodeData.selected) {
           return this.styles.node.selected.strokeWidth;
         }
-        if (nodeData.level === 0) {
-          return this.styles.node.company.strokeWidth;
+        if (nodeData.hasMultipleParents) {
+          return '3px'; // Thicker border for multi-parent nodes
         }
-        if (nodeData.type === '額度') {
-          return this.styles.node.credit.strokeWidth;
-        }
-        if (nodeData.type === '合控') {
-          return this.styles.node.control.strokeWidth;
-        }
-        return this.styles.node.default.strokeWidth;
+        return nodeData.level === 0 ?
+          this.styles.node.company.strokeWidth :
+          nodeData.type === '額度' ?
+            this.styles.node.credit.strokeWidth :
+            this.styles.node.control.strokeWidth;
       });
 
-    // Replace the existing fold/unfold control code with this:
-
-// In your fold/unfold control creation code
-    this.nodes.append('g')
+    // Add fold/unfold control
+    this.nodes.filter((d: any) => d.children || d._children)
+      .append('g')
       .attr('class', 'fold-control')
-      // .attr('transform', (d: any) => `translate(${this.nodeWidth / 2 + 15}, 0)`)
-      .attr('transform', (d: any) => `translate(0, ${this.nodeHeight / 2 + 15})`)
-      .style('display', (d: any) => d.children || d._children ? 'block' : 'none')
-      .style('pointer-events', 'all') // Keep it interactive
+      .attr('transform', (d: any) => `translate(${this.nodeWidth / 2 + 15}, 0)`)
+      .style('pointer-events', 'all')
       .style('visibility', 'visible')
-      .attr('data-spacing-ignore', 'true') // Add a custom attribute for identification
+      .attr('data-spacing-ignore', 'true')
       .on('click', (event: any, d: any) => {
         event.stopPropagation();
         this.toggleFoldOfNode(d);
@@ -454,8 +550,8 @@ export class TreeVisualizationService implements OnDestroy {
       .style('stroke', '#ccc')
       .style('stroke-width', '1px');
 
-// Add + or - symbol to fold/unfold control
-    this.nodes.select('.fold-control')
+    // Add + or - symbol to fold/unfold control
+    this.nodes.selectAll('.fold-control')
       .append('text')
       .attr('dy', '0.3em')
       .attr('text-anchor', 'middle')
@@ -463,22 +559,35 @@ export class TreeVisualizationService implements OnDestroy {
       .style('fill', '#666')
       .text((d: any) => d.children ? '−' : '+');
 
-    // Add circles for nodes
-    this.nodes.append('circle')
-      .attr('class', 'node-circle')
-      .attr('r', 1e-6)
-      .style('fill', (d: any) => d._children ? 'lightsteelblue' : '#fff')
-      .style('stroke', 'steelblue')
-      .style('stroke-width', '1.5px');
+    // Add multi-parent indicator for applicable nodes
+    this.nodes.filter((d: any) => d.data.hasMultipleParents)
+      .append('g')
+      .attr('class', 'multi-parent-indicator')
+      .attr('transform', `translate(${-this.nodeWidth / 2 - 15}, 0)`)
+      .append('circle')
+      .attr('r', 8)
+      .style('fill', '#ff9800') // Orange indicator
+      .style('stroke', '#fff')
+      .style('stroke-width', '1px');
 
-    // Add labels for nodes
-    this.nodes.append('text')
-      .attr('class', 'node-label')
-      .attr('dy', '.15em')
-      .attr('x', 100)
-      .text((d: any) => d.data.name)
-      .attr('opacity', 0);
+    // Add "MP" text in the multi-parent indicator
+    this.nodes.selectAll('.multi-parent-indicator')
+      .append('text')
+      .attr('dy', '0.3em')
+      .attr('text-anchor', 'middle')
+      .style('font-size', '10px')
+      .style('fill', '#fff')
+      .style('font-weight', 'bold')
+      .text('MP'); // Multi-parent
 
+    // Add text content
+    this.addNodeTextContent();
+  }
+
+  /**
+   * Add text content to nodes
+   */
+  private addNodeTextContent() {
     // Add name text
     this.nodes.append('text')
       .attr('dy', '-1.5em')
@@ -487,9 +596,9 @@ export class TreeVisualizationService implements OnDestroy {
       .text((d: { data: TreeNode; }) => {
         const node = d.data as TreeNode;
         if (node.level === 0) {
-          return '提案名稱: ' + (d.data as TreeNode).name;
+          return '提案名稱: ' + node.name;
         }
-        return '額度編號: ' + (d.data as TreeNode).name;
+        return '額度編號: ' + node.name;
       })
       .style('fill', this.styles.text.title.color)
       .style('font-size', this.styles.text.title.size)
@@ -503,7 +612,7 @@ export class TreeVisualizationService implements OnDestroy {
       .text((d: { data: TreeNode; }) => {
         const node = d.data as TreeNode;
         if (node.type) {
-          return '額度種類: ' + ((d.data as TreeNode).type || '');
+          return '額度種類: ' + (node.type || '');
         }
         return '';
       })
@@ -518,17 +627,17 @@ export class TreeVisualizationService implements OnDestroy {
       .text((d: { data: TreeNode; }) => {
         const node = d.data as TreeNode;
         if (node.level !== 0) {
-          if (!((d.data as TreeNode).currency)) {
-            d.data.currency = '新台幣';
+          if (!node.currency) {
+            node.currency = '新台幣';
           }
-          return '幣別: ' + ((d.data as TreeNode).currency || '');
+          return '幣別: ' + (node.currency || '');
         }
         return '';
       })
       .style('fill', this.styles.text.info.color)
       .style('font-size', this.styles.text.info.size);
 
-    // Add percentages text
+    // Add amount text
     this.nodes.append('text')
       .attr('dy', '3.4em')
       .attr('text-anchor', 'middle')
@@ -547,30 +656,29 @@ export class TreeVisualizationService implements OnDestroy {
     this.nodes.append('text')
       .attr('dy', '4.6em')
       .attr('text-anchor', 'middle')
-      .attr('class', 'node-currency')
+      .attr('class', 'node-state')
       .text((d: { data: TreeNode; }) => {
         const node = d.data as TreeNode;
         if (node.state) {
-          return '帳務狀態: ' + ((d.data as TreeNode).state || '');
+          return '帳務狀態: ' + (node.state || '');
         }
         return '';
       })
       .style('fill', this.styles.text.info.color)
       .style('font-size', this.styles.text.info.size);
 
-    // 在节点组中添加提示图标
-    const noteIcons = this.treeTooltipService.genTooltip(this.nodes);
-
-    // TODO 整合 全文件聆聽事件
-    // part in TreeTooltipService
-    // d3.select('body').on('click', () => {
-    //   if (this.tooltip) {
-    //     this.tooltip.style('visibility', 'hidden');
-    //     this.setActiveTooltip(false);
-    //   }
-    // });
-    return this.svg.node();
+    // Add multi-parent indicator text for applicable nodes
+    this.nodes.filter((d: any) => d.data.hasMultipleParents)
+      .append('text')
+      .attr('dy', '5.8em')
+      .attr('text-anchor', 'middle')
+      .attr('class', 'node-multi-parent')
+      .text('多重父節點')
+      .style('fill', '#ff9800') // Orange for warning
+      .style('font-size', '12px')
+      .style('font-weight', 'bold');
   }
+
 
   // Add this method to your TreeVisualizationService class
   private calculateOptimalNodeSpacing(data: TreeNode): TreeLayout<unknown> {
@@ -780,7 +888,7 @@ export class TreeVisualizationService implements OnDestroy {
       .attr('transform', (d: any) => `translate(${d.x},${d.y})`);
 
     // Add new node elements
-    this.addNodeElements(nodeEnter);
+    // this.addNodeElements(nodeEnter);
 
     // Update existing nodes with transition
     nodeUpdate.merge(nodeEnter)
@@ -806,82 +914,82 @@ export class TreeVisualizationService implements OnDestroy {
       .call(this.treeZoomService.zoom.transform, newTransform);
   }
 
-  private addNodeElements(selection: any) {
-    // Add rectangle
-    selection.append('rect')
-      .attr('width', this.nodeWidth)
-      .attr('height', this.nodeHeight)
-      .attr('x', -this.nodeWidth / 2)
-      .attr('y', -this.nodeHeight / 2)
-      .style('fill', (d: { data: TreeNode; }) => {
-        const nodeData = d.data as TreeNode;
-        if (nodeData.level === 0) {
-          return '#e8f5e9';
-        } // 根節點用綠色
-        return nodeData.type === '額度' ? '#f3e5f5' : '#e3f2fd'; // 額度用紫色，合控用藍色
-      })
-      .style('stroke', (d: { data: TreeNode; }) => {
-        const nodeData = d.data as TreeNode;
-        if (nodeData.level === 0) {
-          return '#81c784';
-        } // 根節點用深綠色
-        return nodeData.type === '額度' ? '#ba68c8' : '#64b5f6'; // 額度用深紫色，合控用深藍色
-      })
-      .attr('rx', 5)
-      .attr('ry', 5);
-
-    // Add content based on node level
-    selection.each(function(this: SVGGElement, d: { data: TreeNode; }) {
-      const nodeData = d.data as TreeNode;
-      const nodeGroup = d3.select(this);
-      const isCredit = nodeData.type === '額度';
-      const textColor = nodeData.level === 0 ? '#2e7d32' : (isCredit ? '#ba68c8' : '#64b5f6');
-
-      if (nodeData.level === 0) {
-        // Root node - show company info
-        nodeGroup.append('text')
-          .attr('dy', '-0.5em')
-          .attr('text-anchor', 'middle')
-          .text(nodeData.name)
-          .style('fill', textColor)
-          .style('font-size', '14px')
-          .style('font-weight', 'bold');
-
-      } else {
-        // Child nodes - show ID, type and amount
-        nodeGroup.append('text')
-          .attr('dy', '-0.5em')
-          .attr('text-anchor', 'middle')
-          .text(`ID: ${nodeData.id}`)
-          .style('fill', textColor)
-          .style('font-size', '12px')
-          .style('font-weight', 'bold');
-
-        nodeGroup.append('text')
-          .attr('dy', '1em')
-          .attr('text-anchor', 'middle')
-          .text(`${nodeData.type}`)
-          .style('fill', textColor)
-          .style('font-size', '12px');
-
-        nodeGroup.append('text')
-          .attr('dy', '2em')
-          .attr('text-anchor', 'middle')
-          .text(`${nodeData.amount ? nodeData.amount.toLocaleString() : 0}元`)
-          .style('fill', textColor)
-          .style('font-size', '12px');
-      }
-
-      // Add lock status for all nodes
-      if (nodeData.locked) {
-        nodeGroup.append('text')
-          .attr('dy', nodeData.level === 0 ? '2em' : '3em')
-          .attr('text-anchor', 'middle')
-          .text('🔒')
-          .style('font-size', '10px');
-      }
-    });
-  }
+  // private addNodeElements(selection: any) {
+  //   // Add rectangle
+  //   selection.append('rect')
+  //     .attr('width', this.nodeWidth)
+  //     .attr('height', this.nodeHeight)
+  //     .attr('x', -this.nodeWidth / 2)
+  //     .attr('y', -this.nodeHeight / 2)
+  //     .style('fill', (d: { data: TreeNode; }) => {
+  //       const nodeData = d.data as TreeNode;
+  //       if (nodeData.level === 0) {
+  //         return '#e8f5e9';
+  //       } // 根節點用綠色
+  //       return nodeData.type === '額度' ? '#f3e5f5' : '#e3f2fd'; // 額度用紫色，合控用藍色
+  //     })
+  //     .style('stroke', (d: { data: TreeNode; }) => {
+  //       const nodeData = d.data as TreeNode;
+  //       if (nodeData.level === 0) {
+  //         return '#81c784';
+  //       } // 根節點用深綠色
+  //       return nodeData.type === '額度' ? '#ba68c8' : '#64b5f6'; // 額度用深紫色，合控用深藍色
+  //     })
+  //     .attr('rx', 5)
+  //     .attr('ry', 5);
+  //
+  //   // Add content based on node level
+  //   selection.each(function(this: SVGGElement, d: { data: TreeNode; }) {
+  //     const nodeData = d.data as TreeNode;
+  //     const nodeGroup = d3.select(this);
+  //     const isCredit = nodeData.type === '額度';
+  //     const textColor = nodeData.level === 0 ? '#2e7d32' : (isCredit ? '#ba68c8' : '#64b5f6');
+  //
+  //     if (nodeData.level === 0) {
+  //       // Root node - show company info
+  //       nodeGroup.append('text')
+  //         .attr('dy', '-0.5em')
+  //         .attr('text-anchor', 'middle')
+  //         .text(nodeData.name)
+  //         .style('fill', textColor)
+  //         .style('font-size', '14px')
+  //         .style('font-weight', 'bold');
+  //
+  //     } else {
+  //       // Child nodes - show ID, type and amount
+  //       nodeGroup.append('text')
+  //         .attr('dy', '-0.5em')
+  //         .attr('text-anchor', 'middle')
+  //         .text(`ID: ${nodeData.id}`)
+  //         .style('fill', textColor)
+  //         .style('font-size', '12px')
+  //         .style('font-weight', 'bold');
+  //
+  //       nodeGroup.append('text')
+  //         .attr('dy', '1em')
+  //         .attr('text-anchor', 'middle')
+  //         .text(`${nodeData.type}`)
+  //         .style('fill', textColor)
+  //         .style('font-size', '12px');
+  //
+  //       nodeGroup.append('text')
+  //         .attr('dy', '2em')
+  //         .attr('text-anchor', 'middle')
+  //         .text(`${nodeData.amount ? nodeData.amount.toLocaleString() : 0}元`)
+  //         .style('fill', textColor)
+  //         .style('font-size', '12px');
+  //     }
+  //
+  //     // Add lock status for all nodes
+  //     if (nodeData.locked) {
+  //       nodeGroup.append('text')
+  //         .attr('dy', nodeData.level === 0 ? '2em' : '3em')
+  //         .attr('text-anchor', 'middle')
+  //         .text('🔒')
+  //         .style('font-size', '10px');
+  //     }
+  //   });
+  // }
 
   private updateAllStyles() {
     if (!this.svg) {

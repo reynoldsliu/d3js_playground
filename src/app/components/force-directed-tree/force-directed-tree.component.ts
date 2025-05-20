@@ -29,21 +29,7 @@ interface GraphLink {
 
 @Component({
   selector: 'app-force-directed-tree',
-  template: `
-    <div class="controls">
-      <button (click)="resetZoom()">
-        <i class="fa fa-expand"></i> Center Graph
-      </button>
-      <button (click)="resetSimulation()">Reset Simulation</button>
-      <button (click)="zoomIn()" title="放大">
-        <i class="fa fa-search-plus"></i> 放大
-      </button>
-      <button (click)="zoomOut()" title="縮小">
-        <i class="fa fa-search-minus"></i> 縮小
-      </button>
-    </div>
-    <div #graphContainer class="graph-container"></div>
-  `,
+  templateUrl: './force-directed-tree.component.html',
   styleUrls: ['./force-directed-tree.component.scss']
 })
 export class ForceDirectedTreeComponent implements OnInit, AfterViewInit {
@@ -723,7 +709,7 @@ export class ForceDirectedTreeComponent implements OnInit, AfterViewInit {
         {
           id: '2',
           name: 'P250001',
-          parentId: '1',
+          parentId: ['1'],
           level: 1,
           locked: false,
           selected: false,
@@ -736,7 +722,7 @@ export class ForceDirectedTreeComponent implements OnInit, AfterViewInit {
         {
           id: '3',
           name: 'P250002',
-          parentId: '1',
+          parentId: ['1'],
           level: 1,
           locked: false,
           selected: false,
@@ -748,7 +734,7 @@ export class ForceDirectedTreeComponent implements OnInit, AfterViewInit {
             {
               id: '5',
               name: 'P250003',
-              parentId: '3',
+              parentId: ['3'],
               level: 2,
               locked: false,
               selected: false,
@@ -763,7 +749,7 @@ export class ForceDirectedTreeComponent implements OnInit, AfterViewInit {
         {
           id: '4',
           name: 'P250004',
-          parentId: '1',
+          parentId: ['1'],
           level: 1,
           locked: false,
           selected: false,
@@ -773,7 +759,7 @@ export class ForceDirectedTreeComponent implements OnInit, AfterViewInit {
           children: [{
             id: '6',
             name: 'P250005',
-            parentId: '1',
+            parentId: ['1'],
             level: 2,
             locked: false,
             selected: false,
@@ -785,7 +771,7 @@ export class ForceDirectedTreeComponent implements OnInit, AfterViewInit {
               { // Node with multiple parents
                 id: '8',
                 name: 'P250007',
-                parentId: '7',
+                parentId: ['7'],
                 level: 3,
                 locked: false,
                 selected: false,
@@ -800,7 +786,7 @@ export class ForceDirectedTreeComponent implements OnInit, AfterViewInit {
           }, {
             id: '7',
             name: 'P250006',
-            parentId: '4',
+            parentId: ['4'],
             level: 2,
             locked: false,
             selected: false,
@@ -810,7 +796,7 @@ export class ForceDirectedTreeComponent implements OnInit, AfterViewInit {
             children: [{
               id: '8',
               name: 'P250007',
-              parentId: '7',
+              parentId: ['7'],
               level: 3,
               locked: false,
               selected: false,
@@ -823,7 +809,7 @@ export class ForceDirectedTreeComponent implements OnInit, AfterViewInit {
             }, {
               id: '9',
               name: 'P250008',
-              parentId: '7',
+              parentId: ['7'],
               level: 3,
               locked: false,
               selected: false,

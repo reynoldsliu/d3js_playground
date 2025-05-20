@@ -59,7 +59,7 @@ export class TreeDataService {
     this.resetSelection(newData);
 
     // 找到並選中目標節點
-    const targetNode = this.getNodeByIdRecursion(newData, nodeId);
+    const targetNode = this.getNodeByIdRecursion(newData, [nodeId]);
     if (targetNode) {
       targetNode.selected = true;
       // 更新選中節點的主題
@@ -100,7 +100,7 @@ export class TreeDataService {
     const newData = this.deepCloneTree(currentData);
     console.log(newData);
     if (parentId) {
-      const targetNode = this.getNodeByIdRecursion(newData, parentId);
+      const targetNode = this.getNodeByIdRecursion(newData, [parentId]);
       console.log(targetNode);
       if (targetNode) {
         // 初始化 children 陣列如果不存在
@@ -111,7 +111,7 @@ export class TreeDataService {
         if (!newNode.id) {
           newNode.id = this.generateUniqueId();
         }
-        newNode.parentId = parentId;
+        newNode.parentId = [parentId];
         newNode.level = (targetNode.level || 0) + 1;
         // 初始化其他屬性
         newNode.locked = newNode.locked || false;
@@ -134,7 +134,7 @@ export class TreeDataService {
       } else {
         newNode.level = 1;
       }
-      newNode.parentId = newData.id;
+      newNode.parentId = [newData.id];
       newData.children.push(newNode);
     }
 
@@ -152,7 +152,7 @@ export class TreeDataService {
     // 創建數據的深拷貝以避免直接修改
     const newData = this.deepCloneTree(currentData);
     // 找到並選中目標節點
-    let targetNode = this.getNodeByIdRecursion(newData, nodeId);
+    let targetNode = this.getNodeByIdRecursion(newData, [nodeId]);
     if (targetNode) {
       // 更新節點屬性，保留現有屬性
       Object.assign(targetNode, updates);
@@ -180,7 +180,7 @@ export class TreeDataService {
     }
 
     const newData = this.deepCloneTree(currentData);
-    const targetNode = this.getNodeByIdRecursion(newData, nodeId);
+    const targetNode = this.getNodeByIdRecursion(newData, [nodeId]);
 
     if (!targetNode) {
       console.warn('未找到要刪除的節點');
@@ -243,8 +243,8 @@ export class TreeDataService {
     const newData = this.deepCloneTree(currentData);
 
     // 找到源節點和目標節點
-    const sourceNode = this.getNodeByIdRecursion(newData, sourceId);
-    const targetNode = this.getNodeByIdRecursion(newData, targetId);
+    const sourceNode = this.getNodeByIdRecursion(newData, [sourceId]);
+    const targetNode = this.getNodeByIdRecursion(newData, [targetId]);
 
     if (!sourceNode || !targetNode) {
       console.error('Source or target node not found');
@@ -296,8 +296,8 @@ export class TreeDataService {
     const newData = this.deepCloneTree(currentData);
 
     // 找到源節點和目標節點
-    const sourceNode = this.getNodeByIdRecursion(newData, sourceId);
-    const targetNode = this.getNodeByIdRecursion(newData, targetId);
+    const sourceNode = this.getNodeByIdRecursion(newData, [sourceId]);
+    const targetNode = this.getNodeByIdRecursion(newData, [targetId]);
 
     if (!sourceNode || !targetNode) {
       console.error('Source or target node not found');
@@ -311,7 +311,7 @@ export class TreeDataService {
     }
 
     // 檢查是否已經是目標節點的子節點
-    if (sourceNode.parentId === targetId) {
+    if (sourceNode.parentId?.includes(targetId)) {
       return;
     }
 
@@ -341,7 +341,7 @@ export class TreeDataService {
     }
 
     // 更新源節點的父節點ID和層級
-    sourceNode.parentId = targetId;
+    sourceNode.parentId = [targetId];
     sourceNode.level = (targetNode.level || 0) + 1;
 
     // 遞迴更新所有子節點的層級
@@ -404,9 +404,9 @@ export class TreeDataService {
     });
   }
 
-  getNodeByIdRecursion(root: TreeNode, nodeId: string): TreeNode | null {
+  getNodeByIdRecursion(root: TreeNode, nodeId: string[]): TreeNode | null {
     // 先檢查當前節點
-    if (root.id === nodeId) {
+    if (nodeId.includes(root.id)) {
       return root;
     }
 
@@ -480,7 +480,7 @@ export class TreeDataService {
     if (!root) {
       return [];
     }
-    const node = this.getNodeByIdRecursion(root, nodeId);
+    const node = this.getNodeByIdRecursion(root, [nodeId]);
     const children = node?.children;
     if (!children) {
       return [];

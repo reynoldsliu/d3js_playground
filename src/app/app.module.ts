@@ -21,6 +21,7 @@ import {TreeDataService} from './modules/tree-visualization/services/tree-data-s
 import { TreeVisualizationModule } from './modules/tree-visualization/tree-visualization.module';
 import {ForceDirectedTreeModule} from './modules/force-directed-tree/force-directed-tree.module';
 import {RadioButtonModule} from 'primeng/radiobutton';
+import {MixTreeForceModule} from './modules/mix-tree-force/mix-tree-force.module';
 
 /**
  * 應用程式根模組
@@ -43,9 +44,10 @@ import {RadioButtonModule} from 'primeng/radiobutton';
     DropdownModule,
     InputNumberModule,
     AppRoutingModule,
+    RadioButtonModule,
     TreeVisualizationModule,
     ForceDirectedTreeModule,
-    RadioButtonModule
+    MixTreeForceModule,
   ],
   bootstrap: [AppComponent]
 })

@@ -1,0 +1,13 @@
+<div class="controls">
+  <button (click)="resetZoom()">
+    <i class="fa fa-expand"></i> Center Graph
+  </button>
+  <button (click)="resetSimulation()">Reset Simulation</button>
+  <button (click)="zoomIn()" title="放大">
+    <i class="fa fa-search-plus"></i> 放大
+  </button>
+  <button (click)="zoomOut()" title="縮小">
+    <i class="fa fa-search-minus"></i> 縮小
+  </button>
+</div>
+<div #graphContainer class="graph-container"></div>

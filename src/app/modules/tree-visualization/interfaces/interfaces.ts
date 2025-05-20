@@ -2,7 +2,7 @@
 export interface TreeNode {
   id: string;               // 唯一識別碼，不應該是可選的
   name: string;             // 公司/節點名稱
-  parentId?: string | null;        // 父節點 ID
+  parentId?: string[];        // 父節點 ID
   level?: number;           // 層級
   children?: TreeNode[];    // 子節點
   _children?: TreeNode[]; // Collapsed nodes storage
