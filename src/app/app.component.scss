@@ -1,3 +1,4 @@
+
 .app-container {
 
   h1 {
@@ -5,5 +6,49 @@
     color: #d63333;
     font-size: 24px;
     text-align: center;
+  }
+
+  padding: 1rem;
+
+  .card {
+    margin-bottom: 1rem;
+    padding: 1rem;
+    border-radius: 4px;
+    background-color: #f9f9f9;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .field-checkbox {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.5rem;
+
+    label {
+      cursor: pointer;
+      font-weight: 500;
+    }
+  }
+
+  h1 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    color: #333;
+  }
+}
+
+/* Fix for PrimeNG radio button focus/selected state */
+:host ::ng-deep {
+  .p-radiobutton .p-radiobutton-box.p-highlight {
+    border-color: #3B82F6;
+    background: #3B82F6;
+  }
+
+  .p-radiobutton .p-radiobutton-box.p-highlight:not(.p-disabled):hover {
+    border-color: #2563EB;
+    background: #2563EB;
+  }
+
+  .p-radiobutton {
+    cursor: pointer;
   }
 }

@@ -168,6 +168,19 @@ export class TreeVisualizationService implements OnDestroy {
                 state: '既有',
                 hasMultipleParents: true,
                 children: []
+              },{ // TODO duplicate
+                id: '9',
+                name: 'P250008',
+                parentId: '7',
+                level: 3,
+                locked: false,
+                selected: false,
+                reports: [],
+                type: '額度',
+                amount: 800, // 5億
+                state: '既有',
+                hasMultipleParents: true,
+                children: []
               }
             ]
           }, {
@@ -191,7 +204,7 @@ export class TreeVisualizationService implements OnDestroy {
               type: '額度',
               amount: 700, // 5億
               state: '既有',
-              hasNultipleParents: true,
+              hasMultipleParents: true,
               children: []
             }, {
               id: '9',
@@ -204,6 +217,7 @@ export class TreeVisualizationService implements OnDestroy {
               type: '額度',
               amount: 800, // 5億
               state: '既有',
+              hasMultipleParents: true,
               children: []
             }],
           }],
@@ -255,7 +269,8 @@ export class TreeVisualizationService implements OnDestroy {
 
     // Create a group with margin
     this.g = this.svg.append('g')
-      .attr('transform', `translate(${this.svgWidth / 2}, ${this.nodeHeight * 2})`);
+      .attr('transform', `translate(${this.nodeHeight * 2}, ${this.svgHeight / 2})`)
+      // .attr('transform', `translate(${this.svgWidth / 2}, ${this.nodeHeight * 2})`);
 
     // Create nodes
     this.nodes = this.g.selectAll('.node')
@@ -270,7 +285,8 @@ export class TreeVisualizationService implements OnDestroy {
         const nodeData = d.data as TreeNode;
         return `node-${nodeData.id}`;
       })
-      .attr('transform', (d: { x: any; y: any; }) => `translate(${d.x},${d.y})`)
+      .attr('transform', (d: { x: any; y: any; }) => `translate(${d.y},${d.x})`)
+      // .attr('transform', (d: { x: any; y: any; }) => `translate(${d.x},${d.y})`)
       .style('cursor', 'grab')
       .style('pointer-events', 'all')  // 確保元素能夠接收鼠標事件
       .on('click', (event: any, d: d3.HierarchyNode<unknown>) => this.handleNodeClick(event, d))
@@ -309,26 +325,31 @@ export class TreeVisualizationService implements OnDestroy {
         // @ts-ignore
         const targetNode = nodeMap[d.target.data.id as string];
         console.log(sourceNode, targetNode);
-
-        // If it's a multi-parent link, add a curve
-        if (d.type === "parent1" || d.type === "parent2") {
-          // Create curved path with different offsets
-          const offset = d.type === "parent1" ? -30 : 30;
-          return `
-                    M ${sourceNode.x},${sourceNode.y}
-                    C ${sourceNode.x},${(sourceNode.y + targetNode.y) / 2 + offset}
-                      ${targetNode.x},${(sourceNode.y + targetNode.y) / 2 + offset}
-                      ${targetNode.x},${targetNode.y}
-                `;
-        } else {
-          // Simple straight line with slight curve
-          return `
-                    M ${sourceNode.x},${sourceNode.y}
-                    C ${sourceNode.x},${(sourceNode.y + targetNode.y) / 2}
-                      ${targetNode.x},${(sourceNode.y + targetNode.y) / 2}
-                      ${targetNode.x},${targetNode.y}
-                `;
-        }
+        return `
+  M ${sourceNode.y},${sourceNode.x}
+  C ${(sourceNode.y + targetNode.y) / 2},${sourceNode.x}
+    ${(sourceNode.y + targetNode.y) / 2},${targetNode.x}
+    ${targetNode.y},${targetNode.x}
+`;
+        // // If it's a multi-parent link, add a curve
+        // if (d.type === "parent1" || d.type === "parent2") {
+        //   // Create curved path with different offsets
+        //   const offset = d.type === "parent1" ? -30 : 30;
+        //   return `
+        //             M ${sourceNode.x},${sourceNode.y}
+        //             C ${sourceNode.x},${(sourceNode.y + targetNode.y) / 2 + offset}
+        //               ${targetNode.x},${(sourceNode.y + targetNode.y) / 2 + offset}
+        //               ${targetNode.x},${targetNode.y}
+        //         `;
+        // } else {
+        //   // Simple straight line with slight curve
+        //   return `
+        //             M ${sourceNode.x},${sourceNode.y}
+        //             C ${sourceNode.x},${(sourceNode.y + targetNode.y) / 2}
+        //               ${targetNode.x},${(sourceNode.y + targetNode.y) / 2}
+        //               ${targetNode.x},${targetNode.y}
+        //         `;
+        // }
       })
       .style('fill', 'none')
       .style('stroke', this.styles.link.stroke)
@@ -417,6 +438,7 @@ export class TreeVisualizationService implements OnDestroy {
 // In your fold/unfold control creation code
     this.nodes.append('g')
       .attr('class', 'fold-control')
+      // .attr('transform', (d: any) => `translate(${this.nodeWidth / 2 + 15}, 0)`)
       .attr('transform', (d: any) => `translate(0, ${this.nodeHeight / 2 + 15})`)
       .style('display', (d: any) => d.children || d._children ? 'block' : 'none')
       .style('pointer-events', 'all') // Keep it interactive
@@ -454,7 +476,8 @@ export class TreeVisualizationService implements OnDestroy {
       .attr('class', 'node-label')
       .attr('dy', '.15em')
       .attr('x', 100)
-      .text((d: any) => d.data.name + 'pppppp');
+      .text((d: any) => d.data.name)
+      .attr('opacity', 0);
 
     // Add name text
     this.nodes.append('text')
@@ -579,9 +602,18 @@ export class TreeVisualizationService implements OnDestroy {
       minNodeSpacing
     );
 
+    const availableHeight = this.svgHeight * 0.8; // Use 80% of SVG width to leave margins
+    const minNodeSpacing2 = this.nodeHeight * 1.2; // Minimum space between nodes
+
+    let verticalSpacing = Math.max(
+      availableHeight / Math.max(maxNodesInLevel - 1, 1),
+      minNodeSpacing2
+    );
+
     // Apply the calculated spacing to the tree layout
     const treeLayout = d3.tree<unknown>()
-      .nodeSize([horizontalSpacing, this.nodeHeight * 2.5])
+      .nodeSize([verticalSpacing, this.nodeWidth * 2.5])
+      // .nodeSize([horizontalSpacing, this.nodeHeight * 2.5])
       .separation((a, b) => {
         // Adjust separation based on whether nodes have the same parent
         return a.parent === b.parent ? 1 : 1;

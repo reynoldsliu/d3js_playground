@@ -1,6 +1,6 @@
 import {AfterViewInit, Component, ElementRef, OnInit, ViewChild} from '@angular/core';
 import * as d3 from 'd3';
-import { TreeNode } from '../../modules/tree-visualization/interfaces/interfaces';
+import {TreeNode} from '../../modules/tree-visualization/interfaces/interfaces';
 
 interface GraphNode {
   id: string;
@@ -31,18 +31,27 @@ interface GraphLink {
   selector: 'app-force-directed-tree',
   template: `
     <div class="controls">
-      <button (click)="centerGraph()">Center Graph</button>
+      <button (click)="resetZoom()">
+        <i class="fa fa-expand"></i> Center Graph
+      </button>
       <button (click)="resetSimulation()">Reset Simulation</button>
+      <button (click)="zoomIn()" title="放大">
+        <i class="fa fa-search-plus"></i> 放大
+      </button>
+      <button (click)="zoomOut()" title="縮小">
+        <i class="fa fa-search-minus"></i> 縮小
+      </button>
     </div>
     <div #graphContainer class="graph-container"></div>
   `,
   styleUrls: ['./force-directed-tree.component.scss']
 })
-export class ForceDirectedTreeComponent implements OnInit ,AfterViewInit{
-  @ViewChild('graphContainer', { static: true })
+export class ForceDirectedTreeComponent implements OnInit, AfterViewInit {
+  @ViewChild('graphContainer', {static: true})
   private graphContainer!: ElementRef;
 
   // Graph elements
+  public zoom: any;
   private svg: any;
   private simulation: any;
   private nodeElements: any;
@@ -55,8 +64,10 @@ export class ForceDirectedTreeComponent implements OnInit ,AfterViewInit{
   // Data for the graph
   private nodes: GraphNode[] = [];
   private links: GraphLink[] = [];
-  private nodeWidth = 220;
-  private nodeHeight = 120;
+  public svgWidth = 1200;
+  public svgHeight = 800;
+  public nodeWidth = 220;
+  public nodeHeight = 120;
   private draggingNode: GraphNode | null = null;
 
   // Tree layout parameters
@@ -65,7 +76,8 @@ export class ForceDirectedTreeComponent implements OnInit ,AfterViewInit{
   private rootNodeX = 0;
   private rootNodeY = 0;
 
-  constructor() { }
+  constructor() {
+  }
 
   ngOnInit() {
     this.processTreeData();
@@ -149,13 +161,13 @@ export class ForceDirectedTreeComponent implements OnInit ,AfterViewInit{
       .attr('viewBox', [0, 0, this.width, this.height]);
 
     // Setup zoom behavior
-    const zoom = d3.zoom()
+    this.zoom = d3.zoom()
       .scaleExtent([0.1, 3])
       .on('zoom', (event) => {
         this.zoomGroup.attr('transform', event.transform);
       });
 
-    this.svg.call(zoom);
+    this.svg.call(this.zoom);
     this.zoomGroup = this.svg.append('g');
 
     // Setup tooltip
@@ -166,6 +178,7 @@ export class ForceDirectedTreeComponent implements OnInit ,AfterViewInit{
 
     // Initialize force simulation
     this.simulation = d3.forceSimulation(this.nodes)
+      .alphaDecay(0.1)
       // .force('link', d3.forceLink(this.links)
       //   .id((d: any) => d.id)
       //   .distance(this.horizontalSpacing / 2) // Distance between connected nodes
@@ -191,11 +204,16 @@ export class ForceDirectedTreeComponent implements OnInit ,AfterViewInit{
       .append('g')
       .attr('class', (d: GraphNode) => {
         let classes = 'node';
-        console.log(d);
-        if (d.level === 0) classes += ' company';
-        else if (d.type === '額度') classes += ' credit';
-        else if (d.type === '合控') classes += ' control';
-        if (d.selected) classes += ' selected';
+        if (d.level === 0) {
+          classes += ' company';
+        } else if (d.type === '額度') {
+          classes += ' credit';
+        } else if (d.type === '合控') {
+          classes += ' control';
+        }
+        if (d.selected) {
+          classes += ' selected';
+        }
         return classes;
       })
       .call(this.dragBehavior())
@@ -213,11 +231,16 @@ export class ForceDirectedTreeComponent implements OnInit ,AfterViewInit{
       .attr('ry', 5)
       .attr('class', (d: GraphNode) => {
         let classes = 'node';
-        console.log(d);
-        if (d.level === 0) classes += ' company';
-        else if (d.type === '額度') classes += ' credit';
-        else if (d.type === '合控') classes += ' control';
-        if (d.selected) classes += ' selected';
+        if (d.level === 0) {
+          classes += ' company';
+        } else if (d.type === '額度') {
+          classes += ' credit';
+        } else if (d.type === '合控') {
+          classes += ' control';
+        }
+        if (d.selected) {
+          classes += ' selected';
+        }
         return classes;
       });
 
@@ -225,7 +248,7 @@ export class ForceDirectedTreeComponent implements OnInit ,AfterViewInit{
     this.addNodeLabels();
 
     // Initial centering of the graph
-    setTimeout(() => this.centerGraph(), 100);
+    setTimeout(() => this.resetZoom(), 0);
   }
 
   /**
@@ -263,7 +286,6 @@ export class ForceDirectedTreeComponent implements OnInit ,AfterViewInit{
         // Set initial position
         node.x = this.rootNodeX + hierarchyNode.x;
         node.y = this.rootNodeY + hierarchyNode.y;
-        console.log(this.rootNodeX, this.rootNodeY, hierarchyNode.x, hierarchyNode.y, node.x, node.y);
 
         // Store original position
         node.originalX = node.x;
@@ -316,7 +338,6 @@ export class ForceDirectedTreeComponent implements OnInit ,AfterViewInit{
     }
 
     // Log completion and update positions
-    console.log('positionNodeAsTree');
     this.updatePositions();
   }
 
@@ -414,7 +435,9 @@ export class ForceDirectedTreeComponent implements OnInit ,AfterViewInit{
       const sourceNode = this.nodes.find(n => n.id === (d.source.id || d.source));
       const targetNode = this.nodes.find(n => n.id === (d.target.id || d.target));
 
-      if (!sourceNode || !targetNode) return '';
+      if (!sourceNode || !targetNode) {
+        return '';
+      }
 
       const sourceX = sourceNode.x || 0;
       const sourceY = sourceNode.y || 0;
@@ -460,6 +483,7 @@ export class ForceDirectedTreeComponent implements OnInit ,AfterViewInit{
   private handleNodeClick(event: MouseEvent, node: GraphNode): void {
     event.stopPropagation();
 
+
     // Deselect all nodes
     this.nodeElements.classed('selected', false);
 
@@ -478,7 +502,9 @@ export class ForceDirectedTreeComponent implements OnInit ,AfterViewInit{
    */
   private showTooltip(event: MouseEvent, node: GraphNode): void {
     // Only show tooltip if node has a note
-    if (!node.note) return;
+    if (!node.note) {
+      return;
+    }
 
     this.tooltip
       .html(`<strong>備註:</strong> ${node.note}`)
@@ -499,6 +525,10 @@ export class ForceDirectedTreeComponent implements OnInit ,AfterViewInit{
    */
   private dragBehavior(): any {
     return d3.drag()
+      .filter((event: any, d: any) => {
+        // Only allow dragging if the node type is '額度'
+        return d.type === '額度';
+      })
       .on('start', (event: any, d: any) => {
         event.sourceEvent.stopPropagation();
         // Set current node as dragging node
@@ -511,7 +541,7 @@ export class ForceDirectedTreeComponent implements OnInit ,AfterViewInit{
         }
 
         // Temporarily remove fixed position to allow movement
-        const temp = { x: d.x, y: d.y };
+        const temp = {x: d.x, y: d.y};
         d.fx = null;
         d.fy = null;
         d.x = temp.x;
@@ -529,26 +559,42 @@ export class ForceDirectedTreeComponent implements OnInit ,AfterViewInit{
         // Clear dragging status
         this.draggingNode = null;
 
-        // Start returning to original position with animation
-        d.fx = null;
-        d.fy = null;
 
-        // Apply spring force to pull node back to original position
-        const restoreForce = d3.forceSimulation([d])
-          .force('restore-x', d3.forceX(d.originalX).strength(0.2))
-          .force('restore-y', d3.forceY(d.originalY).strength(0.2));
+        // Fix the node at its new position
+        d.fx = event.x;
+        d.fy = event.y;
 
-        // Run a few ticks to animate the return
-        for (let i = 0; i < 50; i++) {
-          restoreForce.tick();
-        }
+        // Update node's base position to the new location
+        d.x = event.x;
+        d.y = event.y;
 
-        // When animation is done, fix the node at its original position
+        // Temporarily restart simulation with low alpha to settle connected elements
+        this.simulation.alpha(0.1).restart();
+
+        // Final position update
         setTimeout(() => {
-          d.fx = d.originalX;
-          d.fy = d.originalY;
           this.updatePositions();
-        }, 300);
+        }, 50);
+        // // Start returning to original position with animation
+        // d.fx = null;
+        // d.fy = null;
+        //
+        // // Apply spring force to pull node back to original position
+        // const restoreForce = d3.forceSimulation([d])
+        //   .force('restore-x', d3.forceX(d.originalX).strength(0.2))
+        //   .force('restore-y', d3.forceY(d.originalY).strength(0.2));
+        //
+        // // Run a few ticks to animate the return
+        // for (let i = 0; i < 50; i++) {
+        //   restoreForce.tick();
+        // }
+        //
+        // // When animation is done, fix the node at its original position
+        // setTimeout(() => {
+        //   d.fx = d.originalX;
+        //   d.fy = d.originalY;
+        //   this.updatePositions();
+        // }, 300);
 
         // Temporarily restart main simulation to handle any adjustments
         this.simulation.alpha(0.1).restart();
@@ -556,83 +602,113 @@ export class ForceDirectedTreeComponent implements OnInit ,AfterViewInit{
   }
 
   /**
-   * Center the graph in the viewport
-   */
-  public centerGraph(): void {
-    // Calculate graph bounds
-    let minX = Infinity, maxX = -Infinity;
-    let minY = Infinity, maxY = -Infinity;
-
-    this.nodes.forEach(node => {
-      const x = node.x || 0;
-      const y = node.y || 0;
-      minX = Math.min(minX, x - this.nodeWidth/2);
-      maxX = Math.max(maxX, x + this.nodeWidth/2);
-      minY = Math.min(minY, y - this.nodeHeight/2);
-      maxY = Math.max(maxY, y + this.nodeHeight/2);
-    });
-
-    // Add padding
-    const padding = 50;
-    minX -= padding;
-    minY -= padding;
-    maxX += padding;
-    maxY += padding;
-
-    // Calculate center zoom transform
-    const graphWidth = maxX - minX;
-    const graphHeight = maxY - minY;
-    const scale = Math.min(
-      this.width / graphWidth,
-      this.height / graphHeight,
-      1
-    );
-
-    // Apply zoom transform
-    const centerX = (minX + maxX) / 2;
-    const centerY = (minY + maxY) / 2;
-
-    this.svg.transition().duration(750).call(
-      d3.zoom().transform,
-      d3.zoomIdentity
-        .translate(this.width/2 - centerX * scale, this.height/2 - centerY * scale)
-        .scale(scale)
-    );
-  }
-
-  /**
-   * Reset the simulation and position nodes as a tree
+   * Reset the simulation and reposition nodes as a tree (full redraw)
    */
   public resetSimulation(): void {
     // Stop any ongoing simulations
-    this.simulation.stop();
+    if (this.simulation) {
+      this.simulation.stop();
+    }
 
-    // Clear all fixed positions
+    // Store currently selected nodes before reset
+    const selectedNodeIds = this.nodes
+      .filter(node => node.selected)
+      .map(node => node.id);
+
+    // Clear all fixed positions and reset original positions
     this.nodes.forEach(node => {
       node.fx = null;
       node.fy = null;
+      // Clear original positions to ensure they get updated
+      node.originalX = undefined;
+      node.originalY = undefined;
     });
 
-    // Re-apply tree positions
+    try {
+      // Re-apply tree positions
+      this.positionNodesAsTree();
+
+      // Restore selections
+      this.nodes.forEach(node => {
+        node.selected = selectedNodeIds.includes(node.id);
+      });
+
+      // Update node class to reflect selection state
+      if (this.nodeElements) {
+        this.nodeElements.attr('class', (d: GraphNode) => {
+          let classes = 'node';
+          if (d.level === 0) {
+            classes += ' company';
+          } else if (d.type === '額度') {
+            classes += ' credit';
+            classes += ' draggable';
+          } else if (d.type === '合控') {
+            classes += ' control';
+          }
+          if (d.selected) {
+            classes += ' selected';
+          }
+          return classes;
+        });
+      }
+
+      // Center the graph
+      this.resetZoom();
+
+      // Restart simulation with low alpha to adjust links gently
+      this.simulation.alpha(0.3).restart();
+
+      // Then stop and fix all positions after a brief adjustment period
+      setTimeout(() => {
+        if (this.simulation) {
+          this.simulation.stop();
+        }
+
+        // Save positions as original positions and fix nodes in place
+        this.nodes.forEach(node => {
+          node.fx = node.x;
+          node.fy = node.y;
+          node.originalX = node.x;
+          node.originalY = node.y;
+        });
+
+        // Final update to ensure everything is rendered correctly
+        this.updatePositions();
+
+        console.log('Graph reset complete. All nodes repositioned and fixed in place.');
+      }, 500);
+    } catch (error) {
+      console.error('Error during simulation reset:', error);
+
+      // Fallback to complete redraw if an error occurs
+      this.redrawCompleteGraph();
+    }
+  }
+
+  /**
+   * Complete graph redraw from scratch - use this as a failsafe
+   */
+  private redrawCompleteGraph(): void {
+    console.log('Performing complete graph redraw...');
+
+    // Stop simulation
+    if (this.simulation) {
+      this.simulation.stop();
+    }
+
+    // Clear the SVG completely
+    if (this.svg) {
+      this.svg.selectAll('*').remove();
+    }
+
+    // Recreate the entire graph from scratch
+    this.initializeGraph();
+
+    // Reposition nodes
     this.positionNodesAsTree();
 
-    // Center the graph
-    this.centerGraph();
-
-    // Restart simulation with low alpha to adjust links gently
-    this.simulation.alpha(0.3).restart();
-
-    // Then stop and fix all positions after a brief adjustment period
-    setTimeout(() => {
-      this.simulation.stop();
-      this.nodes.forEach(node => {
-        node.fx = node.x;
-        node.fy = node.y;
-        node.originalX = node.x;
-        node.originalY = node.y;
-      });
-      this.updatePositions();
-    }, 500);
+    // Center view
+    this.resetZoom();
   }
 
   /**
@@ -761,5 +837,50 @@ export class ForceDirectedTreeComponent implements OnInit ,AfterViewInit{
         }
       ]
     } as TreeNode;
+  }
+
+  zoomIn() {
+    this.svg.transition()
+      .duration(300)
+      .call(this.zoom.scaleBy, 1.1);
+  }
+
+  zoomOut(): void {
+    this.svg.transition()
+      .duration(300)
+      .call(this.zoom.scaleBy, 0.9);
+  }
+
+  resetZoom(): void {
+    if (!this.svg || !this.zoomGroup) {
+      return;
+    }
+
+    // 取得所有節點邊界
+    const bounds = this.zoomGroup.node().getBBox();
+
+    // 微調節點的實際大小和間距
+    const padding = 50;
+    const effectiveWidth = bounds.width + this.nodeWidth + padding * 2;
+    const effectiveHeight = bounds.height + this.nodeHeight + padding * 2;
+
+    // 設定縮放比例，確保所有節點可視
+    const scale = Math.min(
+      (this.svgWidth - padding * 2) / effectiveWidth,
+      (this.svgHeight - padding * 2) / effectiveHeight,
+      1.5
+    );
+
+    // 計算置中對齊位置，微調節點的實際大小
+    const translateX = (this.svgWidth - effectiveWidth * scale) / 2  * scale;
+    const translateY = (this.svgHeight - effectiveHeight * scale) / 2  * scale;
+
+    const transform = d3.zoomIdentity
+      .translate(translateX, translateY)
+      .scale(scale);
+
+    this.svg.transition()
+      .duration(750)
+      .call(this.zoom.transform, transform);
   }
 }

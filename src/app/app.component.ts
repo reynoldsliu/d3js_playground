@@ -14,8 +14,17 @@ export class AppComponent {
     { name: '力圖', key: 'force' }
   ];
 
-  onCategoryChange(event: any) {
-    this.selectedCategory = event.key;
+  constructor() {}
+
+  ngOnInit(): void {
+    // Initialize any data or configurations here
+  }
+
+  onCategoryChange(categoryKey: string): void {
+    console.log('Category changed to:', categoryKey);
+    this.selectedCategory = categoryKey;
+
+    // Add any additional logic needed when category changes
   }
 
 }
