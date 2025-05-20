@@ -1,4 +1,4 @@
-import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import {AfterViewInit, Component, ElementRef, OnInit, ViewChild} from '@angular/core';
 import * as d3 from 'd3';
 import { TreeNode } from '../../modules/tree-visualization/interfaces/interfaces';
 
@@ -36,61 +36,9 @@ interface GraphLink {
     </div>
     <div #graphContainer class="graph-container"></div>
   `,
-  styles: [`
-    .graph-container {
-      width: 100%;
-      height: 600px;
-      border: 1px solid #ccc;
-      overflow: hidden;
-    }
-    .controls {
-      margin-bottom: 10px;
-    }
-    .controls button {
-      margin-right: 10px;
-      padding: 5px 10px;
-    }
-    .node rect {
-      stroke-width: 2px;
-    }
-    .node text {
-      font: 12px sans-serif;
-      pointer-events: none;
-    }
-    .link {
-      stroke-opacity: 0.6;
-    }
-    .node.company rect {
-      fill: #e8f5e9;
-      stroke: #81c784;
-    }
-    .node.credit rect {
-      fill: #f3e5f5;
-      stroke: #ba68c8;
-    }
-    .node.control rect {
-      fill: #e3f2fd;
-      stroke: #64b5f6;
-    }
-    .node.selected rect {
-      stroke: #ff6d00;
-      stroke-width: 3px;
-    }
-    .tooltip {
-      position: absolute;
-      background: #fff;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-      padding: 10px;
-      pointer-events: none;
-      opacity: 0;
-      transition: opacity 0.3s;
-      max-width: 200px;
-      z-index: 1000;
-    }
-  `]
+  styleUrls: ['./force-directed-tree.component.scss']
 })
-export class ForceDirectedTreeComponent implements OnInit {
+export class ForceDirectedTreeComponent implements OnInit ,AfterViewInit{
   @ViewChild('graphContainer', { static: true })
   private graphContainer!: ElementRef;
 
@@ -123,6 +71,12 @@ export class ForceDirectedTreeComponent implements OnInit {
     this.processTreeData();
     this.initializeGraph();
     this.positionNodesAsTree();
+  }
+
+  ngAfterViewInit() {
+    // this.processTreeData();
+    // this.initializeGraph();
+    // this.positionNodesAsTree();
   }
 
   /**
@@ -475,24 +429,27 @@ export class ForceDirectedTreeComponent implements OnInit {
           link.source !== (d.source.id || d.source));
 
         if (isSecondLink) {
+          // TODO 弧線
           // More curved for the second link
           return `M${sourceX},${sourceY}
-                  C${sourceX + 100},${(sourceY + targetY) / 2 - 50}
-                  ${targetX + 100},${(sourceY + targetY) / 2 + 50}
-                  ${targetX},${targetY}`;
+                  L${targetX},${targetY}`;
         } else {
           // Slightly curved for the first link
           return `M${sourceX},${sourceY}
-                  C${sourceX - 100},${(sourceY + targetY) / 2 - 50}
-                  ${targetX - 100},${(sourceY + targetY) / 2 + 50}
-                  ${targetX},${targetY}`;
+                  L${targetX},${targetY}`;
+          // return `M${sourceX},${sourceY}
+          //         C${sourceX - 100},${(sourceY + targetY) / 2 - 50}
+          //         ${targetX - 100},${(sourceY + targetY) / 2 + 50}
+          //         ${targetX},${targetY}`;
         }
       } else {
         // Standard curve for normal links
         return `M${sourceX},${sourceY}
-                C${sourceX},${(sourceY + targetY) / 2}
-                ${targetX},${(sourceY + targetY) / 2}
-                ${targetX},${targetY}`;
+                L${targetX},${targetY}`;
+        // return `M${sourceX},${sourceY}
+        //         C${sourceX},${(sourceY + targetY) / 2}
+        //         ${targetX},${(sourceY + targetY) / 2}
+        //         ${targetX},${targetY}`;
       }
     });
   }

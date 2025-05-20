@@ -47,8 +47,6 @@ import {RadioButtonModule} from 'primeng/radiobutton';
     ForceDirectedTreeModule,
     RadioButtonModule
   ],
-  providers: [TreeVisualizationService,
-  TreeDataService],
   bootstrap: [AppComponent]
 })
 export class AppModule { }
