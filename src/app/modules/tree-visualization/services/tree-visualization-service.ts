@@ -250,30 +250,6 @@ export class TreeVisualizationService implements OnDestroy {
     this.g = this.svg.append('g')
       .attr('transform', `translate(${this.nodeHeight * 2}, ${this.svgHeight / 2})`);
 
-    // Create nodes
-    this.nodes = this.g.selectAll('.node')
-      .data(root.descendants())
-      .enter()
-      .append('g')
-      .attr('class', (d: { data: TreeNode; }) => {
-        const nodeData = d.data as TreeNode;
-        let classes = 'node';
-        if (nodeData.selected) classes += ' selected';
-        if (nodeData.locked) classes += ' locked';
-        if (nodeData.hasMultipleParents) classes += ' multi-parent';
-        return classes;
-      })
-      .attr('id', (d: { data: TreeNode; }) => {
-        const nodeData = d.data as TreeNode;
-        return `node-${nodeData.id}`;
-      })
-      .attr('transform', (d: { x: any; y: any; }) => `translate(${d.y},${d.x})`)
-      .style('cursor', 'grab')
-      .style('pointer-events', 'all')
-      .on('click', (event: any, d: d3.HierarchyNode<unknown>) => this.handleNodeClick(event, d))
-      .attr('draggable', true)
-      .attr('cursor', 'move');
-
     // Create a proper node map for looking up nodes by ID
     const nodeMap = new Map<string, any>();
     root.descendants().forEach(node => {
@@ -347,6 +323,30 @@ export class TreeVisualizationService implements OnDestroy {
           ? '5,5' : 'none';
       })
       .style('opacity', this.styles.link.opacity);
+
+    // Create nodes
+    this.nodes = this.g.selectAll('.node')
+      .data(root.descendants())
+      .enter()
+      .append('g')
+      .attr('class', (d: { data: TreeNode; }) => {
+        const nodeData = d.data as TreeNode;
+        let classes = 'node';
+        if (nodeData.selected) classes += ' selected';
+        if (nodeData.locked) classes += ' locked';
+        if (nodeData.hasMultipleParents) classes += ' multi-parent';
+        return classes;
+      })
+      .attr('id', (d: { data: TreeNode; }) => {
+        const nodeData = d.data as TreeNode;
+        return `node-${nodeData.id}`;
+      })
+      .attr('transform', (d: { x: any; y: any; }) => `translate(${d.y},${d.x})`)
+      .style('cursor', 'grab')
+      .style('pointer-events', 'all')
+      .on('click', (event: any, d: d3.HierarchyNode<unknown>) => this.handleNodeClick(event, d))
+      .attr('draggable', true)
+      .attr('cursor', 'move');
 
     // Add rectangles and node content
     this.addNodeElements();

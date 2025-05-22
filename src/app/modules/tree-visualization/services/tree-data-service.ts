@@ -515,14 +515,15 @@ export class TreeDataService {
   }
 
   // 根據ID查找節點數據
-  findNodeById(nodeId: string): TreeNode | null {
+  findNodeById(nodeId: string, root?:TreeNode): TreeNode | null {
     // 從當前樹數據中查找
-    const treeData = this.getTreeData();
+    let treeData = root || null;
     if (!treeData) {
-      return null;
+      treeData = this.getTreeData();
     }
 
-    const findNode = (node: TreeNode): TreeNode | null => {
+    const findNode = (node: TreeNode | null): TreeNode | null => {
+      if(node === null) {return null;}
       if (node.id === nodeId) {
         return node;
       }
