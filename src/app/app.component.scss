@@ -1,54 +1,241 @@
-
 .app-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #fafbfc;
+  min-height: 100vh;
+}
 
-  h1 {
-    margin: 0 0 20px 0;
-    color: #d63333;
-    font-size: 24px;
-    text-align: center;
-  }
+.card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 28px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  margin-bottom: 20px;
+  border: 1px solid #f1f3f4;
+}
 
-  padding: 1rem;
+.card-title {
+  font-size: 16px;
+  font-weight: 500;
+  color: #4a5568;
+  margin: 0 0 24px 0;
+  text-align: center;
+  letter-spacing: 0.025em;
+}
 
-  .card {
-    margin-bottom: 1rem;
-    padding: 1rem;
-    border-radius: 4px;
-    background-color: #f9f9f9;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  }
+.radio-group {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
 
-  .field-checkbox {
-    display: flex;
-    align-items: center;
-    margin-bottom: 0.5rem;
+.radio-item {
+  position: relative;
+}
 
-    label {
-      cursor: pointer;
+.radio-input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+
+  &:checked + .radio-label {
+    background-color: #f0f8ff;
+    border-color: #93c5fd;
+
+    .radio-circle {
+      border-color: #60a5fa;
+      background-color: #60a5fa;
+
+      .radio-inner {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    .radio-text {
+      color: #1e40af;
       font-weight: 500;
     }
   }
 
-  h1 {
-    font-size: 1.5rem;
-    margin-bottom: 1rem;
-    color: #333;
+  &:focus + .radio-label {
+    box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
   }
 }
 
-/* Fix for PrimeNG radio button focus/selected state */
-:host ::ng-deep {
-  .p-radiobutton .p-radiobutton-box.p-highlight {
-    border-color: #3B82F6;
-    background: #3B82F6;
+.radio-label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  padding: 10px 16px;
+  border-radius: 12px;
+  transition: all 0.15s ease;
+  border: 1px solid #e2e8f0;
+  background-color: #ffffff;
+  min-width: 120px;
+  justify-content: center;
+
+  &:hover {
+    background-color: #f8fafc;
+    border-color: #cbd5e0;
+    transform: translateY(-1px);
+  }
+}
+
+.radio-circle {
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid #cbd5e0;
+  border-radius: 50%;
+  margin-right: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+  background-color: white;
+}
+
+.radio-inner {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: white;
+  opacity: 0;
+  transform: scale(0);
+  transition: all 0.15s ease;
+}
+
+.radio-text {
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 400;
+  user-select: none;
+  letter-spacing: 0.015em;
+}
+
+.selected-info {
+  margin-top: 20px;
+  padding: 10px 16px;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  text-align: center;
+
+  p {
+    margin: 0;
+    font-size: 13px;
+    color: #64748b;
+  }
+}
+
+.selected-value {
+  color: #3b82f6;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.content-container {
+  min-height: 500px;
+}
+
+.content-panel {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 28px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  border: 1px solid #f1f3f4;
+  animation: fadeIn 0.25s ease-out;
+}
+
+.content-title {
+  font-size: 20px;
+  font-weight: 500;
+  color: #475569;
+  margin: 0 0 20px 0;
+  text-align: center;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f1f5f9;
+  letter-spacing: 0.025em;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// 響應式設計
+@media (max-width: 768px) {
+  .app-container {
+    padding: 16px;
   }
 
-  .p-radiobutton .p-radiobutton-box.p-highlight:not(.p-disabled):hover {
-    border-color: #2563EB;
-    background: #2563EB;
+  .card {
+    padding: 20px;
+    margin-bottom: 16px;
   }
 
-  .p-radiobutton {
-    cursor: pointer;
+  .radio-group {
+    flex-direction: column;
+    gap: 8px;
   }
+
+  .radio-label {
+    justify-content: flex-start;
+    min-width: auto;
+  }
+
+  .content-panel {
+    padding: 20px;
+  }
+
+  .content-title {
+    font-size: 18px;
+  }
+}
+
+// 小螢幕優化
+@media (max-width: 480px) {
+  .app-container {
+    padding: 12px;
+  }
+
+  .card {
+    padding: 16px;
+    border-radius: 12px;
+  }
+
+  .content-panel {
+    padding: 16px;
+    border-radius: 12px;
+  }
+}
+
+// 平滑滾動
+html {
+  scroll-behavior: smooth;
+}
+
+// 全局重置
+* {
+  box-sizing: border-box;
+}
+
+// 去除深色模式（保持淺色清爽）
+body {
+  margin: 0;
+  background-color: #fafbfc;
+  color: #4a5568;
 }

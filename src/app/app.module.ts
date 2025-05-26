@@ -22,6 +22,7 @@ import { TreeVisualizationModule } from './modules/tree-visualization/tree-visua
 import {ForceDirectedTreeModule} from './modules/force-directed-tree/force-directed-tree.module';
 import {RadioButtonModule} from 'primeng/radiobutton';
 import {MixTreeForceModule} from './modules/mix-tree-force/mix-tree-force.module';
+import {ClusterForceTreeModule} from "./modules/cluster-force-tree/cluster-force-tree.module";
 
 /**
  * 應用程式根模組
@@ -31,24 +32,25 @@ import {MixTreeForceModule} from './modules/mix-tree-force/mix-tree-force.module
   declarations: [
     AppComponent
   ],
-  imports: [
-    BrowserModule,
-    BrowserAnimationsModule,
-    FormsModule,
-    HttpClientModule,
-    // PrimeNG Modules
-    DialogModule,
-    DynamicDialogModule,
-    InputTextModule,
-    ButtonModule,
-    DropdownModule,
-    InputNumberModule,
-    AppRoutingModule,
-    RadioButtonModule,
-    TreeVisualizationModule,
-    ForceDirectedTreeModule,
-    MixTreeForceModule,
-  ],
+    imports: [
+        BrowserModule,
+        BrowserAnimationsModule,
+        FormsModule,
+        HttpClientModule,
+        // PrimeNG Modules
+        DialogModule,
+        DynamicDialogModule,
+        InputTextModule,
+        ButtonModule,
+        DropdownModule,
+        InputNumberModule,
+        AppRoutingModule,
+        RadioButtonModule,
+        TreeVisualizationModule,
+        ForceDirectedTreeModule,
+        MixTreeForceModule,
+        ClusterForceTreeModule,
+    ],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

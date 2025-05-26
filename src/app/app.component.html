@@ -1,27 +1,54 @@
 <div class="app-container">
-  <div class="card flex justify-center">
-    <div class="flex flex-col gap-4">
-      <div *ngFor="let category of categories" class="field-checkbox">
-        <p-radioButton [inputId]="category.key"
-                       name="category"
-                       [value]="category.key"
-                       [(ngModel)]="selectedCategory"
-                       (onClick)="onCategoryChange(category.key)">
-        </p-radioButton>
-        <label [for]="category.key" class="ml-2">{{ category.name }}</label>
+  <div class="card">
+    <h3 class="card-title">選擇圖表類型</h3>
+
+    <div class="radio-group">
+      <div *ngFor="let category of categories" class="radio-item">
+        <input
+          type="radio"
+          [id]="category.key"
+          name="category"
+          [value]="category.key"
+          [(ngModel)]="selectedCategory"
+          (change)="onCategoryChange(category.key)"
+          class="radio-input">
+        <label [for]="category.key" class="radio-label">
+          <span class="radio-circle">
+            <span class="radio-inner"></span>
+          </span>
+          <span class="radio-text">{{ category.name }}</span>
+        </label>
       </div>
     </div>
+
+    <!-- 當前選中狀態顯示 -->
+    <div class="selected-info">
+      <p><strong>當前選中:</strong>
+        <span class="selected-value">{{ selectedCategory }}</span>
+      </p>
+    </div>
   </div>
-  <div *ngIf="selectedCategory === 'tree'">
-    <h1>公司關係樹狀圖</h1>
-    <app-tree-visualization></app-tree-visualization>
-  </div>
-  <div *ngIf="selectedCategory === 'force'">
-    <h1>公司關係力圖</h1>
-    <app-force-directed-tree></app-force-directed-tree>
-  </div>
-  <div *ngIf="selectedCategory === 'mix'">
-    <h1>公司關係混合圖</h1>
-    <app-mix-tree-force></app-mix-tree-force>
+
+  <!-- 內容顯示區域 -->
+  <div class="content-container">
+    <div *ngIf="selectedCategory === 'tree'" class="content-panel">
+      <h1 class="content-title">公司關係樹狀圖</h1>
+      <app-tree-visualization></app-tree-visualization>
+    </div>
+
+    <div *ngIf="selectedCategory === 'force'" class="content-panel">
+      <h1 class="content-title">公司關係力圖</h1>
+      <app-force-directed-tree></app-force-directed-tree>
+    </div>
+
+    <div *ngIf="selectedCategory === 'mix'" class="content-panel">
+      <h1 class="content-title">公司關係混合圖</h1>
+      <app-mix-tree-force></app-mix-tree-force>
+    </div>
+
+    <div *ngIf="selectedCategory === 'cluster'" class="content-panel">
+      <h1 class="content-title">公司關係集群圖</h1>
+      <app-cluster-force-tree></app-cluster-force-tree>
+    </div>
   </div>
 </div>
