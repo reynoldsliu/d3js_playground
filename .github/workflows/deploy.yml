@@ -1,21 +1,24 @@
-name: Deploy to GitHub Pages
+# .github/workflows/deploy.yml
+name: Deploy Angular to GitHub Pages
 
 on:
   push:
-    branches: master
-  pull_request:
-    branches: master
+    branches: [ main ]
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
@@ -24,11 +27,15 @@ jobs:
         run: npm ci
 
       - name: Build
-        run: npm run build --prod
+        run: npm run build -- --configuration production --base-href="/${{ github.event.repository.name }}/"
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v3
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v2
+        with:
+          path: './dist/d3js_playground'
 
       - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
-        if: github.ref == 'refs/heads/main'
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dist/d3js_playground
+        uses: actions/deploy-pages@v2
