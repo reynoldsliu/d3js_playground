@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "angular8-app": {
+    "d3js_playground": {
       "projectType": "application",
       "schematics": {
         "@schematics/angular:component": {
@@ -18,7 +18,7 @@
         "build": {
           "builder": "@angular-devkit/build-angular:browser",
           "options": {
-            "outputPath": "dist/angular8-app",
+            "outputPath": "dist/d3js_playground",
             "index": "src/index.html",
             "main": "src/main.ts",
             "polyfills": "src/polyfills.ts",
@@ -74,18 +74,18 @@
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
           "options": {
-            "browserTarget": "angular8-app:build"
+            "browserTarget": "d3js_playground:build"
           },
           "configurations": {
             "production": {
-              "browserTarget": "angular8-app:build:production"
+              "browserTarget": "d3js_playground:build:production"
             }
           }
         },
         "extract-i18n": {
           "builder": "@angular-devkit/build-angular:extract-i18n",
           "options": {
-            "browserTarget": "angular8-app:build"
+            "browserTarget": "d3js_playground:build"
           }
         },
         "test": {
@@ -122,16 +122,16 @@
           "builder": "@angular-devkit/build-angular:protractor",
           "options": {
             "protractorConfig": "e2e/protractor.conf.js",
-            "devServerTarget": "angular8-app:serve"
+            "devServerTarget": "d3js_playground:serve"
           },
           "configurations": {
             "production": {
-              "devServerTarget": "angular8-app:serve:production"
+              "devServerTarget": "d3js_playground:serve:production"
             }
           }
         }
       }
     }
   },
-  "defaultProject": "angular8-app"
+  "defaultProject": "d3js_playground"
 }
