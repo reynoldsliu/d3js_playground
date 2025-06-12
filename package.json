@@ -8,7 +8,7 @@
     "test": "ng test",
     "lint": "ng lint",
     "e2e": "ng e2e",
-    "start-server": "http-server ./dist/angular8-app -p 5500 -o /"
+    "start-server": "http-server ./dist/d3js_playground -p 5500 -o /"
   },
   "private": true,
   "dependencies": {
