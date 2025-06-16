@@ -1,0 +1,72 @@
+name: Deploy to GCP Kubernetes
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    env:
+      PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+      CLUSTER_NAME: ${{ secrets.GCP_CLUSTER_NAME }}
+      CLUSTER_ZONE: ${{ secrets.GCP_CLUSTER_ZONE }}
+      REGION: ${{ secrets.GCP_REGION }}
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup Cloud SDK
+      uses: google-github-actions/setup-gcloud@v1
+      with:
+        project_id: ${{ env.PROJECT_ID }}
+        service_account_key: ${{ secrets.GCP_SA_KEY }}
+        enable: true
+
+    - name: Configure Docker
+      run: |
+        gcloud auth configure-docker
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Build frontend
+      run: npm run build
+
+    - name: Build Docker images
+      run: |
+        docker build -t gcr.io/${{ env.PROJECT_ID }}/frontend:latest -f k8s/frontend/Dockerfile .
+        docker build -t gcr.io/${{ env.PROJECT_ID }}/backend:latest -f k8s/backend/Dockerfile .
+
+    - name: Push Docker images
+      run: |
+        docker push gcr.io/${{ env.PROJECT_ID }}/frontend:latest
+        docker push gcr.io/${{ env.PROJECT_ID }}/backend:latest
+
+    - name: Configure kubectl
+      run: |
+        gcloud container clusters get-credentials ${{ env.CLUSTER_NAME }} --zone ${{ env.CLUSTER_ZONE }} --project ${{ env.PROJECT_ID }}
+
+    - name: Deploy to Kubernetes
+      run: |
+        kubectl apply -f k8s/config/namespaces.yml
+        kubectl apply -f k8s/backend/deployment.yml
+        kubectl apply -f k8s/backend/service.yml
+        kubectl apply -f k8s/frontend/deployment.yml
+        kubectl apply -f k8s/frontend/service.yml
+        kubectl apply -f k8s/frontend/ingress.yml
+
+    - name: Verify deployment
+      run: |
+        kubectl get pods --all-namespaces
+        kubectl get services --all-namespaces
+        kubectl get ingress --all-namespaces
