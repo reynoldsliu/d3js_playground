@@ -8,7 +8,10 @@
     "test": "ng test",
     "lint": "ng lint",
     "e2e": "ng e2e",
-    "start-server": "http-server ./dist/d3js_playground -p 5500 -o /"
+    "start-server": "http-server ./dist/d3js_playground -p 5500 -o /",
+    "docker:build": "docker build -t my-angular-app .",
+    "docker:run": "docker run -p 80:80 my-angular-app",
+    "docker:dev": "docker-compose up angular-dev"
   },
   "private": true,
   "dependencies": {
